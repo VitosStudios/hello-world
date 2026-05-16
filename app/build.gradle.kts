@@ -15,6 +15,12 @@ android {
         versionName = "1.0"
 
         vectorDrawables { useSupportLibrary = true }
+
+        ndk {
+            // Only ship binaries for ABIs we actually cross-compiled in CI.
+            // Add more here once the matching jniLibs/<abi>/libffmpeg.so is built.
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     buildTypes {
@@ -22,7 +28,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -47,6 +53,8 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
         jniLibs {
+            // Keep libffmpeg.so on disk so we can launch it via ProcessBuilder
+            // from nativeLibraryDir; don't compress it inside the APK.
             useLegacyPackaging = true
         }
     }
@@ -65,10 +73,4 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-
-    // FFmpeg backend. Arthenica's ffmpeg-kit is archived but artifacts remain
-    // available; if Maven Central drops them, swap for a maintained JitPack
-    // fork (e.g. com.github.<fork>:ffmpeg-kit-full:6.0).
-    implementation("com.arthenica:ffmpeg-kit-full:6.0-2.LTS")
-    implementation("com.arthenica:smart-exception-java:0.2.1")
 }

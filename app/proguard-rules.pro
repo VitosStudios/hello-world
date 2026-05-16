@@ -1,0 +1,2 @@
+-keep class com.arthenica.** { *; }
+-keepclassmembers class com.arthenica.** { *; }

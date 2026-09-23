@@ -139,10 +139,10 @@ pushd "$WORK/ffmpeg-$FFMPEG_VER" >/dev/null
 
 # Force pkg-config to look only at our static prefix.
 export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig"
-export PKG_CONFIG="$(command -v pkg-config) --static"
 
 ./configure \
   --prefix="$PREFIX" \
+  --pkg-config-flags="--static" \
   --target-os=android \
   --arch="$FFARCH" \
   --cpu="$FFCPU" \

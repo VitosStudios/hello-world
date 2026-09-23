@@ -11,10 +11,8 @@ package com.example.audioconverter.audio
  *  - OPUS: 510 kbps (codec ceiling), music-tuned
  *  - M4A : ALAC lossless (Apple Lossless) in an MP4 container
  *
- * Because the output is written through a `/proc/self/fd/N` pipe-style path,
- * FFmpeg can't infer the muxer from the filename — [muxer] is passed via
- * `-f` explicitly. The `-movflags +faststart` style flags are NOT used for
- * fd output because fd sinks aren't seekable.
+ * [muxer] is passed to FFmpeg via `-f` so the container never depends on
+ * the output filename.
  */
 enum class OutputFormat(
     val displayName: String,
@@ -107,12 +105,7 @@ enum class OutputFormat(
         displayName = "M4A (ALAC)",
         extension = "m4a",
         mimeType = "audio/mp4",
-        // ipod muxer is mp4 tuned for iTunes-compatible m4a files, but it
-        // requires a seekable output. For our non-seekable fd sink we have
-        // to fall back to streamable matroska/webm — none of those store
-        // ALAC. Instead we write to a temp file (handled in AudioConverter)
-        // when this format is selected. Muxer stays "ipod" so AudioConverter
-        // knows what to do.
+        // ipod = mp4 muxer tuned for iTunes-compatible .m4a files.
         muxer = "ipod",
         codecArgs = listOf(
             "-c:a", "alac",

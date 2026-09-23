@@ -1,0 +1,18 @@
+*.iml
+.gradle/
+# native binaries are built in CI and dropped into jniLibs at package time
+android/app/src/main/jniLibs/
+android/.ffmpeg-build/
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+*.keystore
+!debug.keystore
+
+# server secrets
+server/.env
+__pycache__/

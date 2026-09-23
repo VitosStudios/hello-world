@@ -1,0 +1,14 @@
+services:
+  media-studio:
+    build: .
+    image: media-studio-server
+    container_name: media-studio
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - media-data:/data
+
+volumes:
+  media-data:

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media Studio</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9; --card: #ffffff; --text: #16181d; --muted: #5d6470;
+    --border: #dfe3ea; --accent: #2f6fed; --accent-text: #ffffff;
+    --error: #c62828; --ok: #1b7f3b; --track: #e6e9ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #181b21; --text: #e9ecf1; --muted: #9aa3b2;
+      --border: #2a2f38; --accent: #5b8cff; --accent-text: #0b0d10;
+      --error: #ff6b6b; --ok: #4cc47a; --track: #262b34;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; margin-bottom: 16px;
+  }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input[type=text], input[type=url], input[type=password], select {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font: inherit;
+  }
+  .row { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  .field { margin-bottom: 14px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tabs button {
+    flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); font: inherit; cursor: pointer;
+  }
+  .tabs button[aria-selected=true] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .hint { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .speed { display: flex; align-items: center; gap: 12px; }
+  .speed input { flex: 1; accent-color: var(--accent); }
+  .speed output { min-width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+  .primary {
+    width: 100%; padding: 12px; border: 0; border-radius: 10px;
+    background: var(--accent); color: var(--accent-text); font: 600 1rem system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .primary:disabled { opacity: .5; cursor: default; }
+  .msg { margin-top: 10px; font-size: .9rem; }
+  .msg.error { color: var(--error); }
+  .job { border-top: 1px solid var(--border); padding: 12px 0; }
+  .job:first-child { border-top: 0; padding-top: 0; }
+  .job-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .job-title { font-weight: 600; overflow-wrap: anywhere; }
+  .job-status { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+  .bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+  .bar > div { height: 100%; background: var(--accent); transition: width .3s; }
+  .job-actions { display: flex; gap: 8px; }
+  .job-actions button {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); font: inherit; cursor: pointer;
+  }
+  .job-actions .dl { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .job-error { color: var(--error); font-size: .85rem; white-space: pre-wrap; }
+  .empty { color: var(--muted); }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .link { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; text-decoration: underline; }
+  [hidden] { display: none !important; }
+  @media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div>
+      <h1>Media Studio</h1>
+      <p class="sub">Links oder Dateien laden, schneiden, Tempo ändern, konvertieren.</p>
+    </div>
+    <button class="link" id="logout" hidden>Abmelden</button>
+  </div>
+
+  <section class="card" id="login" hidden>
+    <form id="login-form">
+      <div class="field">
+        <label for="token">Zugangs-Token</label>
+        <input type="password" id="token" autocomplete="current-password" required>
+        <div class="hint">Der Wert von <code>API_TOKEN</code> aus der <code>.env</code> auf dem Server.</div>
+      </div>
+      <button class="primary" type="submit">Anmelden</button>
+      <div class="msg error" id="login-msg"></div>
+    </form>
+  </section>
+
+  <section id="app" hidden>
+    <form class="card" id="job-form">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-src="url">Link</button>
+        <button type="button" role="tab" aria-selected="false" data-src="file">Datei</button>
+      </div>
+      <div class="field" id="src-url">
+        <label for="url">Video- oder Audio-Link</label>
+        <input type="url" id="url" placeholder="https://www.youtube.com/watch?v=…">
+      </div>
+      <div class="field" id="src-file" hidden>
+        <label for="file">Datei</label>
+        <input type="file" id="file" accept="audio/*,video/*">
+      </div>
+
+      <div class="field">
+        <label for="format">Zielformat</label>
+        <select id="format"></select>
+        <div class="hint" id="format-desc"></div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="start">Start</label>
+          <input type="text" id="start" placeholder="0:00" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="end">Ende</label>
+          <input type="text" id="end" placeholder="Ende der Datei" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="speed">Tempo</label>
+        <div class="speed">
+          <input type="range" id="speed" min="0.25" max="4" step="0.05" value="1">
+          <output id="speed-out">1.00×</output>
+        </div>
+        <div class="hint">Tonhöhe bleibt erhalten.</div>
+      </div>
+
+      <div class="field">
+        <label class="check"><input type="checkbox" id="normalize"> Lautstärke normalisieren (−14 LUFS)</label>
+      </div>
+
+      <button class="primary" type="submit" id="submit">Starten</button>
+      <div class="msg" id="form-msg"></div>
+    </form>
+
+    <section class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 12px">Aufträge</h2>
+      <div id="jobs"><p class="empty">Noch keine Aufträge.</p></div>
+    </section>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS = { queued: "Wartet", downloading: "Lädt herunter", processing: "Konvertiert", done: "Fertig", error: "Fehler" };
+let token = null;
+let source = "url";
+let formats = [];
+let pollTimer = null;
+
+function readToken() { try { return localStorage.getItem("ms-token"); } catch { return null; } }
+function saveToken(t) { try { t ? localStorage.setItem("ms-token", t) : localStorage.removeItem("ms-token"); } catch {} }
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` } });
+  if (res.status === 401) { logout(); throw new Error("Nicht autorisiert"); }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return res;
+}
+
+function showLogin(msg = "") {
+  $("app").hidden = true; $("logout").hidden = true; $("login").hidden = false;
+  $("login-msg").textContent = msg;
+}
+
+async function start() {
+  try {
+    formats = await (await api("/api/formats")).json();
+  } catch (e) {
+    return showLogin(e.message);
+  }
+  $("login").hidden = true; $("app").hidden = false; $("logout").hidden = false;
+  $("format").innerHTML = formats.map(f => `<option value="${f.id}">${f.label}</option>`).join("");
+  updateFormatDesc();
+  refreshJobs();
+}
+
+function logout() {
+  token = null; saveToken(null); clearTimeout(pollTimer); showLogin();
+}
+
+function updateFormatDesc() {
+  const f = formats.find(f => f.id === $("format").value);
+  $("format-desc").textContent = f ? f.description : "";
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function renderJobs(jobs) {
+  const box = $("jobs");
+  if (!jobs.length) { box.innerHTML = '<p class="empty">Noch keine Aufträge.</p>'; return; }
+  box.innerHTML = jobs.map(j => `
+    <div class="job">
+      <div class="job-head">
+        <span class="job-title">${escapeHtml(j.filename || j.title)}</span>
+        <span class="job-status">${STATUS[j.status] || j.status}${j.status !== "done" && j.status !== "error" ? " · " + Math.round(j.progress * 100) + " %" : ""}</span>
+      </div>
+      ${j.status === "error"
+        ? `<div class="job-error">${escapeHtml(j.error || "")}</div>`
+        : `<div class="bar"><div style="width:${Math.round(j.progress * 100)}%"></div></div>`}
+      <div class="job-actions">
+        ${j.status === "done" ? `<button class="dl" data-dl="${j.id}" data-name="${escapeHtml(j.filename)}">Herunterladen</button>` : ""}
+        <button data-del="${j.id}">Entfernen</button>
+      </div>
+    </div>`).join("");
+}
+
+async function refreshJobs() {
+  clearTimeout(pollTimer);
+  try {
+    const jobs = await (await api("/api/jobs")).json();
+    renderJobs(jobs);
+    const active = jobs.some(j => j.status !== "done" && j.status !== "error");
+    pollTimer = setTimeout(refreshJobs, active ? 1000 : 5000);
+  } catch (e) {
+    if (token) pollTimer = setTimeout(refreshJobs, 5000);
+  }
+}
+
+$("login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  token = $("token").value.trim(); saveToken(token); start();
+});
+$("logout").addEventListener("click", logout);
+$("format").addEventListener("change", updateFormatDesc);
+$("speed").addEventListener("input", () => { $("speed-out").textContent = Number($("speed").value).toFixed(2) + "×"; });
+
+document.querySelectorAll(".tabs button").forEach(btn => btn.addEventListener("click", () => {
+  source = btn.dataset.src;
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b === btn));
+  $("src-url").hidden = source !== "url"; $("src-file").hidden = source !== "file";
+}));
+
+$("job-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("form-msg"); msg.className = "msg"; msg.textContent = "";
+  const body = new FormData();
+  if (source === "url") {
+    if (!$("url").value.trim()) { msg.className = "msg error"; msg.textContent = "Bitte einen Link eingeben."; return; }
+    body.append("url", $("url").value.trim());
+  } else {
+    if (!$("file").files[0]) { msg.className = "msg error"; msg.textContent = "Bitte eine Datei wählen."; return; }
+    body.append("file", $("file").files[0]);
+  }
+  body.append("format", $("format").value);
+  body.append("start", $("start").value);
+  body.append("end", $("end").value);
+  body.append("speed", $("speed").value);
+  body.append("normalize", $("normalize").checked);
+  $("submit").disabled = true;
+  msg.textContent = source === "file" ? "Lade hoch…" : "";
+  try {
+    await api("/api/jobs", { method: "POST", body });
+    msg.textContent = "Auftrag gestartet.";
+    $("url").value = "";
+    refreshJobs();
+  } catch (err) {
+    msg.className = "msg error"; msg.textContent = err.message;
+  } finally {
+    $("submit").disabled = false;
+  }
+});
+
+$("jobs").addEventListener("click", async (e) => {
+  const dl = e.target.closest("[data-dl]");
+  const del = e.target.closest("[data-del]");
+  try {
+    if (dl) {
+      dl.disabled = true; dl.textContent = "Lädt…";
+      const blob = await (await api(`/api/jobs/${dl.dataset.dl}/download`)).blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = dl.dataset.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      dl.disabled = false; dl.textContent = "Herunterladen";
+    } else if (del) {
+      await api(`/api/jobs/${del.dataset.del}`, { method: "DELETE" });
+      refreshJobs();
+    }
+  } catch (err) { alert(err.message); }
+});
+
+token = readToken();
+token ? start() : showLogin();
+</script>
+</body>
+</html>

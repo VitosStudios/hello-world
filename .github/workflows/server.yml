@@ -1,0 +1,56 @@
+name: Server
+
+on:
+  push:
+    branches: [ "claude/**", "master", "main" ]
+    paths:
+      - "server/**"
+      - ".github/workflows/server.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest httpx
+
+      - name: Run tests
+        run: python -m pytest tests -q
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t media-studio-server server
+
+      - name: Smoke test
+        run: |
+          docker run -d --name ms -p 8000:8000 \
+            -e API_TOKEN=ci-smoke-test-token-123456 -e YTDLP_AUTO_UPDATE=0 \
+            media-studio-server
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/api/health && break
+            sleep 1
+          done
+          curl -fsS -H "Authorization: Bearer ci-smoke-test-token-123456" \
+            http://127.0.0.1:8000/api/formats
+          docker exec ms deno --version
+          docker exec ms yt-dlp --version
+          docker logs ms

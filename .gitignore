@@ -1,8 +1,8 @@
 *.iml
 .gradle/
 # native binaries are built in CI and dropped into jniLibs at package time
-app/src/main/jniLibs/
-.ffmpeg-build/
+android/app/src/main/jniLibs/
+android/.ffmpeg-build/
 .idea/
 .DS_Store
 build/
@@ -12,3 +12,7 @@ captures/
 local.properties
 *.keystore
 !debug.keystore
+
+# server secrets
+server/.env
+__pycache__/

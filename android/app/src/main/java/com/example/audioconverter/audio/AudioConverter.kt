@@ -36,6 +36,7 @@ object AudioConverter {
         inputUri: Uri,
         outputUri: Uri,
         format: OutputFormat,
+        edit: EditOptions = EditOptions(),
     ): Flow<ConversionEvent> = flow {
         val ffmpeg = File(context.applicationInfo.nativeLibraryDir, "libffmpeg.so")
         if (!ffmpeg.exists()) {
@@ -63,15 +64,19 @@ object AudioConverter {
                 return@flow
             }
 
-            val totalDurationMs = (probeDurationSeconds(ffmpeg, inputFile) * 1000).toLong()
+            val totalDurationMs = edit.outputDurationMs(
+                (probeDurationSeconds(ffmpeg, inputFile) * 1000).toLong()
+            )
 
             val cmd = buildList {
                 add(ffmpeg.absolutePath)
                 add("-y")
                 add("-nostdin")
                 add("-hide_banner")
+                addAll(edit.inputArgs())
                 add("-i"); add(inputFile.absolutePath)
                 add("-vn")
+                edit.audioFilter()?.let { add("-af"); add(it) }
                 addAll(format.codecArgs)
                 add("-f"); add(format.muxer)
                 add(outputFile.absolutePath)

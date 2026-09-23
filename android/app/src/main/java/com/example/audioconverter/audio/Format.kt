@@ -98,6 +98,8 @@ enum class OutputFormat(
             "-vbr", "on",
             "-application", "audio",
             "-ar", "48000",
+            // 510k is only valid for 2 channels, so force stereo.
+            "-ac", "2",
         ),
         description = "510 kbps, music-tuned – Codec-Maximum",
     ),

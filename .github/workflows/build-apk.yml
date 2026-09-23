@@ -3,6 +3,9 @@ name: Build APK
 on:
   push:
     branches: [ "claude/**", "master", "main" ]
+    paths:
+      - "android/**"
+      - ".github/workflows/build-apk.yml"
   workflow_dispatch:
 
 jobs:
@@ -19,8 +22,9 @@ jobs:
       - name: Hash build inputs
         id: hash
         run: |
-          echo "key=$(sha256sum scripts/build-ffmpeg.sh | cut -c1-16)" >> "$GITHUB_OUTPUT"
+          echo "key=$(sha256sum android/scripts/build-ffmpeg.sh | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
+      # The cached path predates the android/ move; keep it so the cache stays valid.
       - name: Restore FFmpeg cache
         id: ffmpeg-cache
         uses: actions/cache@v4
@@ -41,7 +45,9 @@ jobs:
           echo "Using NDK at: $ANDROID_NDK_HOME"
           test -d "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" \
             || { echo "NDK toolchain not found"; exit 1; }
-          ./scripts/build-ffmpeg.sh ${{ matrix.abi }}
+          ./android/scripts/build-ffmpeg.sh ${{ matrix.abi }}
+          mkdir -p build/${{ matrix.abi }}
+          cp android/build/${{ matrix.abi }}/libffmpeg.so build/${{ matrix.abi }}/
 
       - name: Upload FFmpeg binary
         uses: actions/upload-artifact@v4
@@ -57,6 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    defaults:
+      run:
+        working-directory: android
     steps:
       - uses: actions/checkout@v4
 
@@ -80,8 +89,8 @@ jobs:
       - name: Place binaries into jniLibs
         run: |
           set -e
-          for d in ffmpeg-bins/ffmpeg-*; do
-            abi="${d#ffmpeg-bins/ffmpeg-}"
+          for d in ../ffmpeg-bins/ffmpeg-*; do
+            abi="${d#../ffmpeg-bins/ffmpeg-}"
             mkdir -p "app/src/main/jniLibs/$abi"
             cp "$d/libffmpeg.so" "app/src/main/jniLibs/$abi/libffmpeg.so"
             ls -lah "app/src/main/jniLibs/$abi/libffmpeg.so"
@@ -98,15 +107,14 @@ jobs:
 
       - name: Stage APK
         run: |
-          mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk \
-             artifacts/AudioConverter-debug.apk
+          mkdir -p ../artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk ../artifacts/MediaStudio-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AudioConverter-debug-apk
-          path: artifacts/AudioConverter-debug.apk
+          name: MediaStudio-debug-apk
+          path: artifacts/MediaStudio-debug.apk
           if-no-files-found: error
 
       - name: Publish rolling release
@@ -115,7 +123,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "build-${{ github.run_number }}"
-          name: "Audio Converter build #${{ github.run_number }}"
-          files: artifacts/AudioConverter-debug.apk
+          name: "Media Studio build #${{ github.run_number }}"
+          files: artifacts/MediaStudio-debug.apk
           generate_release_notes: false
           prerelease: true

@@ -43,7 +43,12 @@
     "writing": "Schreibtipps",
     "translate": "Übersetzen",
     "emotion": "Emotions-Check",
-    "emotionLevels": ["Ruhig", "Leicht emotional", "Emotional", "Sehr hitzig"],
+    "emotionLevels": [
+      "Ruhig",
+      "Leicht emotional",
+      "Emotional",
+      "Sehr hitzig"
+    ],
     "calmer": "Ruhigere Version",
     "replace": "Ersetzen",
     "insert": "Einfügen",
@@ -91,7 +96,8 @@
     "testRunning": "Teste…",
     "aiEnabled": "KI-Korrektur aktiv",
     "trigger": "Wann korrigieren?",
-    "triggerPause": "Bei kurzer Tipp-Pause (empfohlen)",
+    "triggerLive": "Live – Wort für Wort (empfohlen)",
+    "triggerPause": "Bei kurzer Tipp-Pause",
     "triggerWord": "Nach jedem Wort",
     "triggerSentence": "Nach jedem Satz",
     "triggerManual": "Nur auf Knopfdruck",

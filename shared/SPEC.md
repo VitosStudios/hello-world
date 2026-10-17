@@ -360,11 +360,23 @@ unchanged, and the model gets full sentence context.)
 
 ### 5.3 Triggers
 
+The product goal is **live conversion while typing**: the user never "writes
+and then corrects" – the garbled input turns into a correct sentence word by
+word, and earlier words are re-checked as more context arrives. There is no
+separate conversion step afterwards.
+
 Setting `trigger`:
 
-* `pause` (default): every append restarts a timer of `pauseMs` (default
-  700 ms); when it fires → correct. A sentence end (`. ! ? …`, newline)
-  triggers immediately.
+* `live` (default): trigger **immediately** (no debounce) whenever a word is
+  completed, i.e. a whitespace or punctuation character is typed after a
+  letter or digit, and additionally on a typing pause of `pauseMs` (default
+  700 ms). A sentence end (`. ! ? …`, newline) triggers immediately. Because
+  only one request is in flight and `rerun` coalesces triggers, fast typing
+  automatically batches several new words into the next request, and each
+  request re-sends the whole paragraph so earlier words get corrected again
+  with the new context.
+* `pause`: every append restarts a timer of `pauseMs`; when it fires →
+  correct. A sentence end triggers immediately.
 * `word`: trigger when a whitespace or punctuation is typed after a letter.
 * `sentence`: trigger on sentence end only.
 * `manual`: only the toolbar ✨ button or flush.
@@ -528,7 +540,7 @@ Placeholders `{{name}}` in `shared/prompts/*.txt` are replaced literally:
 
 | task | system | user |
 |---|---|---|
-| correction | `correction-system.txt` with `language` = language.promptName, `languageRules` = language.rules, `strengthRule` = `prompt-parts.strengthRules[strength]` | `correction-user.txt` with `context`, `segment` |
+| correction | `correction-system.txt` with `language` = language.promptName, `languageRules` = language.rules, `strengthRule` = `prompt-parts.strengthRules[strength]`, `keyboardLayout` = the `name` of the active keyboard from layouts.json plus its three letter rows joined with " / " (e.g. `QWERTZ (Deutsch/Schweiz, ä ö ü): qwertzuiopü / asdfghjklöä / yxcvbnm`) | `correction-user.txt` with `context`, `segment` |
 | tips | `tips-system.txt` with `uiLanguage` = `prompt-parts.uiLanguage`, `language`, `variants` = comma separated `id ("label": instruction)` for the enabled `rewriteVariants`, `disabledSections` = names from `prompt-parts.sections` of disabled sections or `none` | `tips-user.txt` with `text`, `corrections` (§5.8, or `(none)`) |
 | mood | `mood-system.txt` with `uiLanguage` | the paragraph as plain text |
 | translate | `translate-system.txt` with `targetLanguage` = translateTargets[i].promptName | the text |

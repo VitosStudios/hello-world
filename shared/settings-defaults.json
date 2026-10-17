@@ -5,12 +5,14 @@
     "provider": "anthropic",
     "customBaseUrl": "http://localhost:11434/v1",
     "aiEnabled": true,
-    "trigger": "pause",
+    "trigger": "live",
     "pauseMs": 700,
     "strength": "normal",
     "waitOnSendMs": 1500,
     "moodWarning": true,
-    "languages": ["de-CH"],
+    "languages": [
+      "de-CH"
+    ],
     "activeLanguage": "de-CH",
     "keyboardMode": "hex",
     "longPressAccents": true,
@@ -28,27 +30,84 @@
     "tipsWriting": true,
     "tipsTranslate": true,
     "tipsEmotion": true,
-    "rewriteVariants": ["formal", "casual", "shorter", "friendlier"],
-    "translateTargets": ["en", "fr", "it", "de-CH", "es", "zh-Hans"],
+    "rewriteVariants": [
+      "formal",
+      "casual",
+      "shorter",
+      "friendlier"
+    ],
+    "translateTargets": [
+      "en",
+      "fr",
+      "it",
+      "de-CH",
+      "es",
+      "zh-Hans"
+    ],
     "incognitoNoAI": true,
     "emojiRecents": [],
     "desktopLiveCorrection": true,
     "desktopLaunchAtLogin": true,
     "desktopShowKeyboardOnStart": false,
     "desktopExcludedApps": [
-      "1Password", "KeePass", "KeePassXC", "Bitwarden", "Dashlane",
-      "Terminal", "iTerm2", "WindowsTerminal", "cmd", "powershell", "pwsh", "conhost",
-      "Code", "devenv", "idea64", "Xcode", "mstsc", "Screen Sharing"
+      "1Password",
+      "KeePass",
+      "KeePassXC",
+      "Bitwarden",
+      "Dashlane",
+      "Terminal",
+      "iTerm2",
+      "WindowsTerminal",
+      "cmd",
+      "powershell",
+      "pwsh",
+      "conhost",
+      "Code",
+      "devenv",
+      "idea64",
+      "Xcode",
+      "mstsc",
+      "Screen Sharing"
     ]
   },
   "allowedValues": {
-    "trigger": ["pause", "word", "sentence", "manual"],
-    "strength": ["light", "normal", "strong"],
-    "keyboardMode": ["hex", "normal"],
-    "keyHeight": ["small", "medium", "large"],
-    "theme": ["system", "light", "dark"],
-    "pauseMs": { "min": 300, "max": 2000 },
-    "longPressMs": { "min": 200, "max": 800 },
-    "waitOnSendMs": { "min": 0, "max": 4000 }
+    "trigger": [
+      "live",
+      "pause",
+      "word",
+      "sentence",
+      "manual"
+    ],
+    "strength": [
+      "light",
+      "normal",
+      "strong"
+    ],
+    "keyboardMode": [
+      "hex",
+      "normal"
+    ],
+    "keyHeight": [
+      "small",
+      "medium",
+      "large"
+    ],
+    "theme": [
+      "system",
+      "light",
+      "dark"
+    ],
+    "pauseMs": {
+      "min": 300,
+      "max": 2000
+    },
+    "longPressMs": {
+      "min": 200,
+      "max": 800
+    },
+    "waitOnSendMs": {
+      "min": 0,
+      "max": 4000
+    }
   }
 }

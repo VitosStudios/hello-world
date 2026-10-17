@@ -1,0 +1,15 @@
+<Project>
+  <!-- Common settings for all Tippli Windows projects. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <Company>VitosStudios</Company>
+    <Product>Tippli</Product>
+    <Version>1.0.0</Version>
+    <Copyright>© VitosStudios</Copyright>
+    <Deterministic>true</Deterministic>
+    <SatelliteResourceLanguages>de;en</SatelliteResourceLanguages>
+    <!-- Folder with the shared, platform independent resources (never copied by hand, SPEC §2). -->
+    <TippliSharedDir>$(MSBuildThisFileDirectory)../shared/</TippliSharedDir>
+  </PropertyGroup>
+</Project>

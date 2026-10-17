@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors theme.json (panel / accent); used before Compose draws its first frame. -->
+    <color name="tippli_window">#F6F7FA</color>
+    <color name="tippli_accent">#4F46E5</color>
+</resources>

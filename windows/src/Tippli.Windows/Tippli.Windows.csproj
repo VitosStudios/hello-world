@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Tippli for Windows: tray app with live correction in every program (SPEC §9.4/§10) plus the optional
+       on-screen keyboard. The whole UI is written in C# (styles are loaded at runtime with XamlReader), so the
+       project needs no XAML markup compilation. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Tippli</AssemblyName>
+    <RootNamespace>Tippli.Windows</RootNamespace>
+    <StartupObject>Tippli.Windows.Program</StartupObject>
+    <ApplicationIcon>$(TippliSharedDir)branding/icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <AssemblyTitle>Tippli – KI-Tastatur</AssemblyTitle>
+
+    <!-- Official .NET SDKs ship the WindowsDesktop SDK on every OS. Some Linux distribution builds of the SDK do not;
+         there we skip its targets and reference the Windows Desktop framework directly (same assemblies, no XAML
+         compilation needed because the UI is code-only). -->
+    <HasWindowsDesktopSdk Condition="Exists('$(MSBuildSDKsPath)/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.targets')">true</HasWindowsDesktopSdk>
+    <ImportWindowsDesktopTargets Condition="'$(HasWindowsDesktopSdk)' != 'true'">false</ImportWindowsDesktopTargets>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HasWindowsDesktopSdk)' != 'true'">
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Tippli.Core/Tippli.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="UI/Styles.xaml" LogicalName="Tippli.Styles.xaml" />
+    <EmbeddedResource Include="$(TippliSharedDir)branding/icon.ico" LogicalName="branding/icon.ico" Link="Shared/branding/icon.ico" />
+    <EmbeddedResource Include="$(TippliSharedDir)branding/icon-256.png" LogicalName="branding/icon-256.png" Link="Shared/branding/icon-256.png" />
+    <EmbeddedResource Include="$(TippliSharedDir)branding/tray-mono-64.png" LogicalName="branding/tray-mono-64.png" Link="Shared/branding/tray-mono-64.png" />
+  </ItemGroup>
+
+</Project>

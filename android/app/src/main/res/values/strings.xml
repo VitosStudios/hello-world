@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only what Android needs in XML. All other copy comes from shared/strings-de.json. -->
+    <string name="app_name" translatable="false">Tippli</string>
+    <string name="ime_label" translatable="false">Tippli KI-Tastatur</string>
+    <string name="subtype_label" translatable="false">Tippli</string>
+</resources>

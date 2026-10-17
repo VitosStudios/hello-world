@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Platform independent core: shared data models, text algorithms (SPEC §5), keyboard geometry (§3),
+       gestures (§4), correction engine, AI clients (§6), settings (§8) and the desktop buffer logic (§10). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Tippli.Core</RootNamespace>
+    <AssemblyName>Tippli.Core</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- shared/ is bundled at build time as embedded resources (SPEC §2). -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(TippliSharedDir)layouts/layouts.json" LogicalName="layouts/layouts.json" Link="Shared/layouts/layouts.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)layouts/accents.json" LogicalName="layouts/accents.json" Link="Shared/layouts/accents.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)languages.json" LogicalName="languages.json" Link="Shared/languages.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)providers.json" LogicalName="providers.json" Link="Shared/providers.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)emoji.json" LogicalName="emoji.json" Link="Shared/emoji.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)theme.json" LogicalName="theme.json" Link="Shared/theme.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)settings-defaults.json" LogicalName="settings-defaults.json" Link="Shared/settings-defaults.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)strings-de.json" LogicalName="strings-de.json" Link="Shared/strings-de.json" />
+    <EmbeddedResource Include="$(TippliSharedDir)prompts/*.txt" LogicalName="prompts/%(Filename)%(Extension)" Link="Shared/prompts/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(TippliSharedDir)prompts/prompt-parts.json" LogicalName="prompts/prompt-parts.json" Link="Shared/prompts/prompt-parts.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tippli.Core.Tests" />
+  </ItemGroup>
+
+</Project>

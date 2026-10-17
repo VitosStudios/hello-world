@@ -15,6 +15,7 @@ using Tippli.Core.Models;
 using Tippli.Core.Settings;
 using Tippli.Core.Shared;
 using Tippli.Windows.Services;
+using EngineTriggers = Tippli.Core.Engine.Triggers;
 
 namespace Tippli.Windows.UI;
 
@@ -414,18 +415,18 @@ internal sealed class SettingsWindow : Window
 
         var pause = UiKit.Slider(S.Get("settings.pauseMs", "Pause bis zur Korrektur"), 300, 2000, 50, St.PauseMs, v => SettingsStore.FormatMs((int)v),
             v => St.PauseMs = (int)v);
-        pause.IsEnabled = St.Trigger is Triggers.Live or Triggers.Pause;
+        pause.IsEnabled = St.Trigger is EngineTriggers.Live or EngineTriggers.Pause;
         var triggers = UiKit.Radios(new[]
         {
-            (Triggers.Live, S.Get("settings.triggerLive", "Live – Wort für Wort (empfohlen)")),
-            (Triggers.Pause, S.Get("settings.triggerPause", "Bei kurzer Tipp-Pause")),
-            (Triggers.Word, S.Get("settings.triggerWord", "Nach jedem Wort")),
-            (Triggers.Sentence, S.Get("settings.triggerSentence", "Nach jedem Satz")),
-            (Triggers.Manual, S.Get("settings.triggerManual", "Nur auf Knopfdruck")),
+            (EngineTriggers.Live, S.Get("settings.triggerLive", "Live – Wort für Wort (empfohlen)")),
+            (EngineTriggers.Pause, S.Get("settings.triggerPause", "Bei kurzer Tipp-Pause")),
+            (EngineTriggers.Word, S.Get("settings.triggerWord", "Nach jedem Wort")),
+            (EngineTriggers.Sentence, S.Get("settings.triggerSentence", "Nach jedem Satz")),
+            (EngineTriggers.Manual, S.Get("settings.triggerManual", "Nur auf Knopfdruck")),
         }, St.Trigger, v =>
         {
             St.Trigger = v;
-            pause.IsEnabled = v is Triggers.Live or Triggers.Pause;
+            pause.IsEnabled = v is EngineTriggers.Live or EngineTriggers.Pause;
         });
         root.Children.Add(UiKit.Card(UiKit.Header(S.Get("settings.trigger", "Wann korrigieren?")), triggers, pause));
 

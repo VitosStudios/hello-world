@@ -20,6 +20,8 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <InvariantGlobalization>false</InvariantGlobalization>
     <AssemblyTitle>Tippli – KI-Tastatur</AssemblyTitle>
+    <!-- Single-file publish: compress the bundled runtime (about half the download size). -->
+    <EnableCompressionInSingleFile Condition="'$(PublishSingleFile)' == 'true'">true</EnableCompressionInSingleFile>
 
     <!-- Official .NET SDKs ship the WindowsDesktop SDK on every OS. Some Linux distribution builds of the SDK do not;
          there we skip its targets and reference the Windows Desktop framework directly (same assemblies, no XAML

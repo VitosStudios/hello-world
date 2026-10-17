@@ -127,6 +127,11 @@ class KeyboardLayout(
     val rowsTop: Float,
     /** Number of normal (rectangular) rows above the bottom row. */
     val normalRowCount: Int,
+    /**
+     * Height of the normal rows above the bottom row: H on the letters page; on
+     * symbol pages the rows share the letters-page height evenly (SPEC §3.7).
+     */
+    val normalRowHeight: Float,
     val bottomRowTop: Float,
 ) {
     val toolbarHeight get() = metrics.toolbarHeight
@@ -162,7 +167,7 @@ class KeyboardLayout(
             return best
         }
         if (rowsOfNormalKeys.isEmpty()) return nearestByX(bottomKeys, x)
-        val row = floor((y - rowsTop) / rowHeight).toInt().coerceIn(0, rowsOfNormalKeys.size - 1)
+        val row = floor((y - rowsTop) / normalRowHeight).toInt().coerceIn(0, rowsOfNormalKeys.size - 1)
         return nearestByX(rowsOfNormalKeys[row], x)
     }
 
@@ -288,30 +293,31 @@ object LayoutBuilder {
         val unit = (w - 2 * sp) / spec.width.toFloat().coerceAtLeast(1f)
         val bottomRowTop = total - m.bottomPadding - h
 
-        var rowsTop: Float
+        val rowsTop: Float
         var normalRows = 0
+        var normalRowHeight = h
         if (geometryMode == KeyboardMode.HEX) {
             rowsTop = m.toolbarHeight + h / 6f
             spec.rows.forEachIndexed { r, row -> addHexRow(keys, row.keys, row.indent, r, rowsTop + r * h, unit, m, punctuation) }
         } else {
             val withNumberRow = req.page == Page.LETTERS && req.numberRow
-            val rowCount = spec.rows.size + if (withNumberRow) 1 else 0
-            // Extra vertical space (symbol pages in hex mode, or without the number row) is split
-            // evenly above and below the rows.
-            val extra = (bottomRowTop - m.toolbarHeight - rowCount * h).coerceAtLeast(0f)
-            rowsTop = m.toolbarHeight + extra / 2f
+            val rowCount = (spec.rows.size + if (withNumberRow) 1 else 0).coerceAtLeast(1)
+            // The rows share the space between toolbar and bottom row evenly: exactly H on the
+            // letters page; taller rows on symbol pages, which keep the letters-page height.
+            rowsTop = m.toolbarHeight
+            normalRowHeight = (bottomRowTop - m.toolbarHeight) / rowCount
             var y = rowsTop
             if (withNumberRow) {
-                addScaledRow(keys, req.layouts.numberRow, y, w, m, KeyArea.NUMBER_ROW, -1, emptyMap())
-                y += h
+                addScaledRow(keys, req.layouts.numberRow, y, w, normalRowHeight, m, KeyArea.NUMBER_ROW, emptyMap())
+                y += normalRowHeight
             }
             spec.rows.forEachIndexed { r, row ->
-                addUnitRow(keys, row.keys, row.indent, r, y, unit, m, punctuation)
-                y += h
+                addUnitRow(keys, row.keys, row.indent, r, y, normalRowHeight, unit, m, punctuation)
+                y += normalRowHeight
             }
             normalRows = rowCount
         }
-        addScaledRow(keys, bottom, bottomRowTop, w, m, KeyArea.BOTTOM, -1, punctuation)
+        addScaledRow(keys, bottom, bottomRowTop, w, h, m, KeyArea.BOTTOM, punctuation)
 
         return KeyboardLayout(
             width = w,
@@ -323,6 +329,7 @@ object LayoutBuilder {
             unit = unit,
             rowsTop = rowsTop,
             normalRowCount = normalRows,
+            normalRowHeight = normalRowHeight,
             bottomRowTop = bottomRowTop,
         )
     }
@@ -336,12 +343,12 @@ object LayoutBuilder {
     /** A normal row measured in layout units (SPEC §3.2). */
     private fun addUnitRow(
         keys: MutableList<Key>, row: List<KeySpec>, indent: Double, rowIndex: Int, top: Float,
-        unit: Float, m: PixelMetrics, punctuation: Map<String, String>,
+        rowHeight: Float, unit: Float, m: PixelMetrics, punctuation: Map<String, String>,
     ) {
         var x = m.sidePadding + indent.toFloat() * unit
         row.forEachIndexed { i, spec ->
             val kw = spec.width.toFloat() * unit
-            val cell = Box(x, top, x + kw, top + m.rowHeight)
+            val cell = Box(x, top, x + kw, top + rowHeight)
             keys += rectKey(keys.size, spec.key, cell, KeyArea.LETTERS, rowIndex, i, m, punctuation)
             x += kw
         }
@@ -349,8 +356,8 @@ object LayoutBuilder {
 
     /** Bottom row and number row: weights scaled to fill the width (SPEC §3.2). */
     private fun addScaledRow(
-        keys: MutableList<Key>, row: List<KeySpec>, top: Float, width: Float, m: PixelMetrics,
-        area: KeyArea, rowIndex: Int, punctuation: Map<String, String>,
+        keys: MutableList<Key>, row: List<KeySpec>, top: Float, width: Float, rowHeight: Float,
+        m: PixelMetrics, area: KeyArea, punctuation: Map<String, String>,
     ) {
         val sum = row.sumOf { it.width }.toFloat()
         if (sum <= 0f) return
@@ -358,8 +365,8 @@ object LayoutBuilder {
         var x = m.sidePadding
         row.forEachIndexed { i, spec ->
             val kw = spec.width.toFloat() * scale
-            val cell = Box(x, top, x + kw, top + m.rowHeight)
-            keys += rectKey(keys.size, spec.key, cell, area, rowIndex, i, m, punctuation)
+            val cell = Box(x, top, x + kw, top + rowHeight)
+            keys += rectKey(keys.size, spec.key, cell, area, -1, i, m, punctuation)
             x += kw
         }
     }

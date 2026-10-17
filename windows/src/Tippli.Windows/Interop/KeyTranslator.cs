@@ -45,7 +45,6 @@ internal sealed class KeyTranslator
         Mark(VK.LMENU);
         Mark(VK.RMENU);
         if (CapsLock) _state[VK.CAPITAL] = 0x01;
-        if ((GetKeyState(VK.NUMLOCK) & 0x0001) != 0) _state[VK.NUMLOCK] = 0x01;
         if (vk is >= 0 and < 256) _state[vk] |= 0x80;
 
         int n = ToUnicodeEx((uint)vk, scanCode, _state, _buffer, _buffer.Length, TOUNICODE_NO_STATE_CHANGE, layout);

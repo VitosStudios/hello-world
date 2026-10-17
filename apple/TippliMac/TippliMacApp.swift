@@ -43,7 +43,7 @@ struct MenuContent: View {
             Button(AppleStrings.tipsForSelection + "   ⌃⌥H") {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { desktop.tipsForSelection() }
             }
-            Button(AppleStrings.correctNow + "   ⌃⌥J") {
+            Button(loc("toolbar.correctNow") + "   ⌃⌥J") {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { desktop.correctNow() }
             }
         }

@@ -153,7 +153,9 @@ separate space keys (both type a space; both are cursor trackpads).
 `$123` opens `symbolPages.symbols1`, `$sym2` → `symbols2`, `$sym1` →
 `symbols1`, `$abc` → letters. Symbol pages are always drawn with **normal**
 (rectangular) geometry, also when hex mode is active, with
-`bottomRows.symbols`. After typing a space or enter on a symbol page the
+`bottomRows.symbols`. The keyboard keeps the height of the letters page (hex
+padding / number row included) so it never jumps; the symbol rows share that
+height evenly. After typing a space or enter on a symbol page the
 keyboard returns to letters.
 
 ---
@@ -369,7 +371,8 @@ Setting `trigger`:
 
 * `live` (default): trigger **immediately** (no debounce) whenever a word is
   completed, i.e. a whitespace or punctuation character is typed after a
-  letter or digit, and additionally on a typing pause of `pauseMs` (default
+  letter or digit (the word-internal characters `' ’ - _` do not complete a
+  word, so "geht's" or "E-Mail" never fire mid-word), and additionally on a typing pause of `pauseMs` (default
   700 ms). A sentence end (`. ! ? …`, newline) triggers immediately. Because
   only one request is in flight and `rerun` coalesces triggers, fast typing
   automatically batches several new words into the next request, and each
@@ -377,7 +380,8 @@ Setting `trigger`:
   with the new context.
 * `pause`: every append restarts a timer of `pauseMs`; when it fires →
   correct. A sentence end triggers immediately.
-* `word`: trigger when a whitespace or punctuation is typed after a letter.
+* `word`: trigger when a whitespace or punctuation is typed after a letter
+  (same word-internal exceptions as `live`).
 * `sentence`: trigger on sentence end only.
 * `manual`: only the toolbar ✨ button or flush.
 

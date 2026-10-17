@@ -13,7 +13,6 @@ enum AppleStrings {
     static let quit = "Tippli beenden"
     static let onScreenKeyboard = "Bildschirmtastatur"
     static let tipsForSelection = "Tipps für Auswahl"
-    static let correctNow = "Jetzt korrigieren"
     static let statusOn = "an"
     static let statusOff = "aus"
     static let add = "Hinzufügen"

@@ -33,8 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ch.vitosstudios.tippli.TippliApp
 import kotlin.math.roundToInt
 
 private val transparentListColors
@@ -101,12 +103,13 @@ fun ChoiceDialog(
     options: List<Pair<String, String>>,
     selected: String,
     onDismiss: () -> Unit,
-    closeLabel: String = "OK",
+    closeLabel: String? = null,
     onSelect: (String) -> Unit,
 ) {
+    val close = closeLabel ?: (LocalContext.current.applicationContext as TippliApp).strings["tips.close"]
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text(closeLabel) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(close) } },
         title = { Text(title) },
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {

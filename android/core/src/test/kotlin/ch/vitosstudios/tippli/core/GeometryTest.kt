@@ -68,6 +68,31 @@ class GeometryTest {
     }
 
     @Test
+    fun symbolRowsShareTheLettersPageHeightEvenly() {
+        val h = metrics.rowHeight
+        for ((mode, numberRow, expectedRow) in listOf(
+            Triple(KeyboardMode.HEX, false, (3 * h + h / 3) / 3),
+            Triple(KeyboardMode.NORMAL, true, 4 * h / 3),
+            Triple(KeyboardMode.NORMAL, false, h),
+        )) {
+            for (page in listOf(Page.SYMBOLS1, Page.SYMBOLS2)) {
+                val l = layout("qwertz", mode, page, numberRow)
+                assertEquals(layout("qwertz", mode, Page.LETTERS, numberRow).height, l.height, 0.01f)
+                assertEquals(expectedRow, l.normalRowHeight, 0.01f)
+                val rows = l.keys.filter { it.area == KeyArea.LETTERS }.groupBy { it.row }.toSortedMap().values
+                assertEquals(3, rows.size)
+                rows.forEachIndexed { r, keys ->
+                    assertEquals(l.toolbarHeight + r * expectedRow, keys.first().cell.top, 0.01f)
+                    assertEquals(expectedRow, keys.first().cell.height, 0.01f)
+                }
+                // No gap between the last symbol row and the bottom row.
+                assertEquals(l.bottomRowTop, rows.last().first().cell.bottom, 0.01f)
+                assertEquals(h, l.keys.first { it.area == KeyArea.BOTTOM }.cell.height, 0.01f)
+            }
+        }
+    }
+
+    @Test
     fun normalRowsUseUnitsAndBottomRowFillsWidth() {
         val l = layout("qwertz", KeyboardMode.NORMAL, numberRow = true)
         val u = (width - 2 * metrics.sidePadding) / 11f

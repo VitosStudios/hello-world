@@ -80,7 +80,8 @@ internal sealed class TrayIcon : IDisposable
         _status.Text = line;
         _live.Checked = _c.Settings.DesktopLiveCorrection;
         _keyboard.Checked = _c.KeyboardVisible;
-        _icon.Icon = _c.Settings.DesktopLiveCorrection ? _normalIcon : _offIcon;
+        var icon = _c.Settings.DesktopLiveCorrection ? _normalIcon : _offIcon;
+        if (!ReferenceEquals(_icon.Icon, icon)) _icon.Icon = icon;
         var tip = "Tippli – " + line;
         _icon.Text = tip.Length > 127 ? tip[..127] : tip;
     }

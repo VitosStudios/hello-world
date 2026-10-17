@@ -1,0 +1,2 @@
+# Kotlin 2.x compiler session data (the top-level .gitignore covers .gradle/ and build/)
+.kotlin/

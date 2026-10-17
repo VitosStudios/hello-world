@@ -118,6 +118,8 @@ class KeyboardController(
 
     private var layoutCache: KeyboardLayout? = null
     private var layoutKey: Any? = null
+    private var lastWidth = 0f
+    private var lastMetrics: PixelMetrics? = null
 
     val restoreStackSize: Int get() = restoreStack.size
     val isShifted: Boolean get() = shift != ShiftState.OFF
@@ -172,6 +174,8 @@ class KeyboardController(
 
     /** Current geometry for [width] and [metrics]; cached until something changes. */
     fun layout(width: Float, metrics: PixelMetrics): KeyboardLayout? {
+        lastWidth = width
+        lastMetrics = metrics
         val kb = keyboard ?: return null
         val numberRow = settings?.numberRow == true
         val cacheKey = listOf(width, metrics, keyboardId, mode, page, numberRow)
@@ -184,7 +188,14 @@ class KeyboardController(
         return layoutCache
     }
 
-    override fun currentLayout(): KeyboardLayout? = layoutCache
+    /**
+     * Geometry for hit testing. Always matches the current page/mode/language, even
+     * before the view has redrawn after a switch.
+     */
+    override fun currentLayout(): KeyboardLayout? {
+        val metrics = lastMetrics ?: return layoutCache
+        return layout(lastWidth, metrics)
+    }
 
     // ------------------------------------------------------------------ labels
 

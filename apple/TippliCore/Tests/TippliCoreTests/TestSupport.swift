@@ -26,8 +26,8 @@ func loadSharedJSON(_ relativePath: String) throws -> Any {
 }
 
 /// A fresh, empty UserDefaults suite for a test.
-func makeTestDefaults(_ name: String = #function) -> UserDefaults {
-    let suite = "tippli.tests." + name + "." + UUID().uuidString
+func makeTestDefaults() -> UserDefaults {
+    let suite = "tippli.tests." + UUID().uuidString
     let d = UserDefaults(suiteName: suite)!
     d.removePersistentDomain(forName: suite)
     return d

@@ -77,20 +77,24 @@ struct SettingsForm: View {
                 Text(loc("settings.modeHex")).tag("hex")
                 Text(loc("settings.modeNormal")).tag("normal")
             }
-            Toggle(loc("settings.longPressAccents"), isOn: model.bool(SettingKey.longPressAccents))
-            Toggle(loc("settings.longPressDigits"), isOn: model.bool(SettingKey.longPressDigits))
-            SliderRow(title: loc("settings.longPressMs"), value: model.number(SettingKey.longPressMs),
-                      range: model.range(SettingKey.longPressMs, fallback: 200...800), step: 25, unit: "ms")
+            Group {
+                Toggle(loc("settings.longPressAccents"), isOn: model.bool(SettingKey.longPressAccents))
+                Toggle(loc("settings.longPressDigits"), isOn: model.bool(SettingKey.longPressDigits))
+                SliderRow(title: loc("settings.longPressMs"), value: model.number(SettingKey.longPressMs),
+                          range: model.range(SettingKey.longPressMs, fallback: 200...800), step: 25, unit: "ms")
+            }
             Picker(loc("settings.keyHeight"), selection: model.string(SettingKey.keyHeight)) {
                 Text(loc("settings.keyHeightSmall")).tag("small")
                 Text(loc("settings.keyHeightMedium")).tag("medium")
                 Text(loc("settings.keyHeightLarge")).tag("large")
             }
-            Toggle(loc("settings.haptics"), isOn: model.bool(SettingKey.haptics))
-            Toggle(loc("settings.sound"), isOn: model.bool(SettingKey.sound))
-            Toggle(loc("settings.autoCapitalize"), isOn: model.bool(SettingKey.autoCapitalize))
-            Toggle(loc("settings.doubleSpacePeriod"), isOn: model.bool(SettingKey.doubleSpacePeriod))
-            Toggle(loc("settings.numberRow"), isOn: model.bool(SettingKey.numberRow))
+            Group {
+                Toggle(loc("settings.haptics"), isOn: model.bool(SettingKey.haptics))
+                Toggle(loc("settings.sound"), isOn: model.bool(SettingKey.sound))
+                Toggle(loc("settings.autoCapitalize"), isOn: model.bool(SettingKey.autoCapitalize))
+                Toggle(loc("settings.doubleSpacePeriod"), isOn: model.bool(SettingKey.doubleSpacePeriod))
+                Toggle(loc("settings.numberRow"), isOn: model.bool(SettingKey.numberRow))
+            }
             Picker(loc("settings.theme"), selection: model.string(SettingKey.theme)) {
                 Text(loc("settings.themeSystem")).tag("system")
                 Text(loc("settings.themeLight")).tag("light")

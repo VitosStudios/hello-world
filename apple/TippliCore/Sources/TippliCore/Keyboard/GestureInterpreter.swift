@@ -69,7 +69,7 @@ public final class GestureInterpreter {
     private var pointers: [Int: Pointer] = [:]
 
     private enum Mode {
-        case none
+        case idle
         case cursor
         case swipeLeft
         case swipeRight
@@ -83,7 +83,7 @@ public final class GestureInterpreter {
         var last: CGPoint
         var beyondSlop = false
         var committed = false
-        var mode: Mode = .none
+        var mode: Mode = .idle
         var cursorSteps = 0
         var swipeSteps = 0
         var deleted = 0
@@ -136,7 +136,7 @@ public final class GestureInterpreter {
 
         // Fast typing rule: commit older, still-resting character pointers.
         let older = pointers.values.sorted { $0.id < $1.id }
-        for o in older where !o.committed && o.mode == .none && !o.beyondSlop
+        for o in older where !o.committed && o.mode == .idle && !o.beyondSlop
             && (o.key.isCharacter || o.key.key == "$space") && popup?.ownerId != o.id {
             o.committed = true
             o.cancelTimers()
@@ -192,7 +192,7 @@ public final class GestureInterpreter {
             return
         }
         onEvent(.pressEnded(ptr.key))
-        if ptr.mode != .none { return }
+        if ptr.mode != .idle { return }
         if ptr.key.key == "$back" { return }
 
         let dx = p.x - ptr.start.x
@@ -261,7 +261,7 @@ public final class GestureInterpreter {
             return
         case .swipeRight, .consumed:
             return
-        case .none:
+        case .idle:
             break
         }
 
@@ -308,7 +308,7 @@ public final class GestureInterpreter {
     }
 
     private func longPressFired(id: Int) {
-        guard let ptr = pointers[id], !ptr.committed, !ptr.beyondSlop, ptr.mode == .none else { return }
+        guard let ptr = pointers[id], !ptr.committed, !ptr.beyondSlop, ptr.mode == .idle else { return }
         ptr.longPressTimer = nil
         if ptr.key.key == "$shift" {
             ptr.mode = .consumed
@@ -332,7 +332,7 @@ public final class GestureInterpreter {
     }
 
     private func repeatFired(id: Int) {
-        guard let ptr = pointers[id], !ptr.committed, ptr.mode == .none else { return }
+        guard let ptr = pointers[id], !ptr.committed, ptr.mode == .idle else { return }
         if ptr.deleted >= thresholds.wordRepeatAfter {
             onEvent(.backspaceWord)
             ptr.deleted += 1

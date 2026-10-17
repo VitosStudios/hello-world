@@ -1,0 +1,240 @@
+# XcodeGen spec for Tippli (iOS app + keyboard extension, macOS menu-bar app).
+# Generate the project with:   cd apple && xcodegen
+#
+# ┌───────────────────────────────────────────────────────────────────────┐
+# │ CHANGE THESE FOR YOUR OWN APPLE ID (top-level `settings` below):        │
+# │   TIPPLI_BUNDLE_PREFIX  reverse-DNS prefix of all bundle identifiers    │
+# │   DEVELOPMENT_TEAM      your team id ("" = unsigned / run locally)      │
+# │   TIPPLI_APP_GROUP      App Group shared by the app and the keyboard    │
+# │                         (default: group.<prefix>.tippli)                │
+# └───────────────────────────────────────────────────────────────────────┘
+name: Tippli
+
+settings:
+  base:
+    TIPPLI_BUNDLE_PREFIX: ch.vitosstudios
+    DEVELOPMENT_TEAM: ""
+    TIPPLI_APP_GROUP: group.$(TIPPLI_BUNDLE_PREFIX).tippli
+    TIPPLI_KEYCHAIN_GROUP: $(TIPPLI_BUNDLE_PREFIX).tippli.shared
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEAD_CODE_STRIPPING: YES
+
+options:
+  bundleIdPrefix: ch.vitosstudios
+  developmentLanguage: de
+  deploymentTarget:
+    iOS: "16.0"
+    macOS: "13.0"
+
+packages:
+  TippliCore:
+    path: TippliCore
+
+targets:
+  # ---------------------------------------------------------------- iOS app
+  Tippli:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: TippliApp
+      - path: Shared/Common
+      - path: Shared/Settings
+      # Shared resources (SPEC §2) – folder references keep the layouts/ and
+      # prompts/ sub-paths that TippliCore's BundleResourceProvider expects.
+      - path: ../shared/layouts
+        type: folder
+        buildPhase: resources
+      - path: ../shared/prompts
+        type: folder
+        buildPhase: resources
+      - path: ../shared/languages.json
+        buildPhase: resources
+      - path: ../shared/providers.json
+        buildPhase: resources
+      - path: ../shared/emoji.json
+        buildPhase: resources
+      - path: ../shared/theme.json
+        buildPhase: resources
+      - path: ../shared/settings-defaults.json
+        buildPhase: resources
+      - path: ../shared/strings-de.json
+        buildPhase: resources
+    dependencies:
+      - package: TippliCore
+      - target: TippliKeyboard
+    info:
+      path: Config/Tippli-Info.plist
+      properties:
+        CFBundleDisplayName: Tippli
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
+            CFBundleURLSchemes:
+              - tippli
+        TippliAppGroup: $(TIPPLI_APP_GROUP)
+        TippliKeychainGroup: $(AppIdentifierPrefix)$(TIPPLI_KEYCHAIN_GROUP)
+    entitlements:
+      path: Config/Tippli.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(TIPPLI_APP_GROUP)
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)$(TIPPLI_KEYCHAIN_GROUP)
+    settings:
+      base:
+        PRODUCT_NAME: Tippli
+        PRODUCT_BUNDLE_IDENTIFIER: $(TIPPLI_BUNDLE_PREFIX).tippli
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+  # ----------------------------------------------------- iOS keyboard extension
+  TippliKeyboard:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: TippliKeyboard
+      - path: Shared/Common
+      - path: Shared/Panels
+      - path: ../shared/layouts
+        type: folder
+        buildPhase: resources
+      - path: ../shared/prompts
+        type: folder
+        buildPhase: resources
+      - path: ../shared/languages.json
+        buildPhase: resources
+      - path: ../shared/providers.json
+        buildPhase: resources
+      - path: ../shared/emoji.json
+        buildPhase: resources
+      - path: ../shared/theme.json
+        buildPhase: resources
+      - path: ../shared/settings-defaults.json
+        buildPhase: resources
+      - path: ../shared/strings-de.json
+        buildPhase: resources
+    dependencies:
+      - package: TippliCore
+    info:
+      path: Config/TippliKeyboard-Info.plist
+      properties:
+        CFBundleDisplayName: Tippli
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        TippliAppGroup: $(TIPPLI_APP_GROUP)
+        TippliKeychainGroup: $(AppIdentifierPrefix)$(TIPPLI_KEYCHAIN_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            PrimaryLanguage: de-CH
+            RequestsOpenAccess: true
+    entitlements:
+      path: Config/TippliKeyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(TIPPLI_APP_GROUP)
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)$(TIPPLI_KEYCHAIN_GROUP)
+    settings:
+      base:
+        PRODUCT_NAME: TippliKeyboard
+        PRODUCT_BUNDLE_IDENTIFIER: $(TIPPLI_BUNDLE_PREFIX).tippli.keyboard
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: YES
+
+  # ------------------------------------------------------------- macOS app
+  TippliMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: TippliMac
+      - path: Shared/Common
+      - path: Shared/Settings
+      - path: Shared/Panels
+      - path: ../shared/layouts
+        type: folder
+        buildPhase: resources
+      - path: ../shared/prompts
+        type: folder
+        buildPhase: resources
+      - path: ../shared/languages.json
+        buildPhase: resources
+      - path: ../shared/providers.json
+        buildPhase: resources
+      - path: ../shared/emoji.json
+        buildPhase: resources
+      - path: ../shared/theme.json
+        buildPhase: resources
+      - path: ../shared/settings-defaults.json
+        buildPhase: resources
+      - path: ../shared/strings-de.json
+        buildPhase: resources
+    dependencies:
+      - package: TippliCore
+    info:
+      path: Config/TippliMac-Info.plist
+      properties:
+        CFBundleDisplayName: Tippli
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHumanReadableCopyright: "© Tippli"
+    entitlements:
+      path: Config/TippliMac.entitlements
+      properties:
+        # No sandbox: event taps and synthetic key events need it off.
+        com.apple.security.app-sandbox: false
+    settings:
+      base:
+        PRODUCT_NAME: TippliMac
+        PRODUCT_BUNDLE_IDENTIFIER: $(TIPPLI_BUNDLE_PREFIX).tippli.mac
+        ENABLE_HARDENED_RUNTIME: NO
+        COMBINE_HIDPI_IMAGES: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+schemes:
+  Tippli:
+    build:
+      targets:
+        Tippli: all
+        TippliKeyboard: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+  TippliMac:
+    build:
+      targets:
+        TippliMac: all
+    run:
+      config: Debug
+    archive:
+      config: Release

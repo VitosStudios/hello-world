@@ -103,9 +103,10 @@ kotlin {
 }
 
 // Every task that reads the asset folders must run after the sync.
-tasks.named("preBuild") { dependsOn(syncSharedAssets) }
 tasks.configureEach {
-    if (name != "syncSharedAssets" && (name.contains("Assets") || name.contains("lint", ignoreCase = true))) {
+    if (name == "preBuild" ||
+        (name != "syncSharedAssets" && (name.contains("Assets") || name.contains("lint", ignoreCase = true)))
+    ) {
         dependsOn(syncSharedAssets)
     }
 }

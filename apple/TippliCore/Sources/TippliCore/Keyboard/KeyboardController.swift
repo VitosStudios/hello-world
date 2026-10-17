@@ -784,7 +784,8 @@ public final class KeyboardController {
         func build(compact level: Int) -> (left: [Spec], right: [Spec]) {
             var left: [Spec] = []
             var right: [Spec] = []
-            let aiText = level >= 3 && ind != .fullAccessNeeded ? "" : aiTitle
+            let dropAITitle = level >= 4 || (level >= 3 && ind != .fullAccessNeeded)
+            let aiText = dropAITitle ? "" : aiTitle
             left.append(Spec(kind: .aiStatus, icon: aiIcon, title: aiText, style: .plain, minWidth: 30))
             if showUndo {
                 left.append(Spec(kind: .undo, icon: "↶", title: level >= 2 ? "" : loc("toolbar.undo"), style: .chip, minWidth: 34))

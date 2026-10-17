@@ -32,7 +32,7 @@ class AndroidTextHost(private val service: InputMethodService) : EditorHost {
     private class Expectation(val start: Int, val end: Int, val at: Long)
 
     private var info: EditorInfo? = null
-    private var field = FieldInfo()
+    private var fieldInfo = FieldInfo()
     private var selStart = -1
     private var selEnd = -1
     private val expected = ArrayDeque<Expectation>()
@@ -45,7 +45,7 @@ class AndroidTextHost(private val service: InputMethodService) : EditorHost {
 
     fun startInput(info: EditorInfo?, field: FieldInfo) {
         this.info = info
-        this.field = field
+        fieldInfo = field
         selStart = info?.initialSelStart ?: -1
         selEnd = info?.initialSelEnd ?: -1
         expected.clear()
@@ -200,7 +200,7 @@ class AndroidTextHost(private val service: InputMethodService) : EditorHost {
     override fun insertNewline(): Boolean {
         // Multi-line text fields get a real "\n"; everything else gets an Enter key
         // event so single-line fields and terminals can react to it.
-        if (field.kind != FieldKind.RAW && FieldClassifier.isMultiLine(info)) {
+        if (fieldInfo.kind != FieldKind.RAW && FieldClassifier.isMultiLine(info)) {
             insert("\n")
             return true
         }

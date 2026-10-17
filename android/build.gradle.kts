@@ -5,6 +5,10 @@
 buildscript {
     val hasAndroidSdk = gradle.extra.has("tippli.hasAndroidSdk") &&
         gradle.extra["tippli.hasAndroidSdk"] == true
+    repositories {
+        google()
+        mavenCentral()
+    }
     dependencies {
         if (hasAndroidSdk) {
             classpath(libs.android.gradle.plugin)

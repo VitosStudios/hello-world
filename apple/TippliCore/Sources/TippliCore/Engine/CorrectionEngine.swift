@@ -162,6 +162,19 @@ public final class CorrectionEngine {
         onStatusChange?()
     }
 
+    /// Desktop buffer reset (click, focus change, navigation keys, Enter):
+    /// invalidate requests and forget the context, but keep the session
+    /// toggle, the error pause and the mood state.
+    public func resetContext() {
+        cancelDebounce()
+        dropInFlight()
+        history.removeAll()
+        lastCorrection = nil
+        suppressUntilBoundary = false
+        lastOutput = nil
+        onStatusChange?()
+    }
+
     public func setFieldAllowed(_ allowed: Bool) {
         guard allowed != fieldAllowed else { return }
         fieldAllowed = allowed

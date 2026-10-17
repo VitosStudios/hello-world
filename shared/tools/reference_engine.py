@@ -28,8 +28,13 @@ def has_letter(s):
     return any(unicodedata.category(c)[0] == "L" for c in s)
 
 
-def select_segment(before, explicit, pinyin, max_segment=400, max_context=600):
-    p = before.rfind("\n") + 1
+def select_segment(before, explicit, pinyin, min_start=0, max_segment=400, max_context=600):
+    if 0 < min_start < len(before) and not is_ws(before[min_start - 1]):
+        # never start inside a word: skip to after the next whitespace
+        while min_start < len(before) and not is_ws(before[min_start]):
+            min_start += 1
+        min_start = min(min_start + 1, len(before))
+    p = max(before.rfind("\n") + 1, min_start)
     end = len(before)
     trailing = ""
     in_progress = len(before) > 0 and is_letter_or_digit(before[-1])
@@ -173,6 +178,11 @@ def can_apply(before_now, segment, trailing, typed_since):
 
 SELECT = [
     ("ich bin hir ", False, False),
+    ("Das hab ich so gmeint und jetzt neu wort ", False, False, 22),
+    ("Das hab ich so gmeint und jetzt neu wort ", False, False, 24),
+    ("Das hab ich so gmeint und", False, False, 22),
+    ("Das hab ich so gmeint ", False, False, 22),
+    ("Zeile eins\nDas hab ich so gmeint und jetzt ", False, False, 5),
     ("ich bin hir", False, False),
     ("hallo", False, False),
     ("hallo", True, False),
@@ -239,9 +249,14 @@ def main():
         "doubleSpacePeriod": [],
         "canApply": [],
     }
-    for before, explicit, pinyin in SELECT:
-        cases["selectSegment"].append({"before": before, "explicit": explicit, "pinyin": pinyin,
-                                       "expected": select_segment(before, explicit, pinyin)})
+    for entry in SELECT:
+        before, explicit, pinyin = entry[:3]
+        min_start = entry[3] if len(entry) > 3 else 0
+        case = {"before": before, "explicit": explicit, "pinyin": pinyin}
+        if min_start:
+            case["minStart"] = min_start
+        case["expected"] = select_segment(before, explicit, pinyin, min_start)
+        cases["selectSegment"].append(case)
     for seg, out, pinyin in CLEAN:
         cases["cleanOutput"].append({"segment": seg, "output": out, "pinyin": pinyin,
                                      "expected": clean_output(seg, out, pinyin)})

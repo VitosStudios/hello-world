@@ -12,6 +12,53 @@
    }
   },
   {
+   "before": "Das hab ich so gmeint und jetzt neu wort ",
+   "explicit": false,
+   "pinyin": false,
+   "minStart": 22,
+   "expected": {
+    "context": "Das hab ich so gmeint ",
+    "segment": "und jetzt neu wort ",
+    "trailing": ""
+   }
+  },
+  {
+   "before": "Das hab ich so gmeint und jetzt neu wort ",
+   "explicit": false,
+   "pinyin": false,
+   "minStart": 24,
+   "expected": {
+    "context": "Das hab ich so gmeint und ",
+    "segment": "jetzt neu wort ",
+    "trailing": ""
+   }
+  },
+  {
+   "before": "Das hab ich so gmeint und",
+   "explicit": false,
+   "pinyin": false,
+   "minStart": 22,
+   "expected": null
+  },
+  {
+   "before": "Das hab ich so gmeint ",
+   "explicit": false,
+   "pinyin": false,
+   "minStart": 22,
+   "expected": null
+  },
+  {
+   "before": "Zeile eins\nDas hab ich so gmeint und jetzt ",
+   "explicit": false,
+   "pinyin": false,
+   "minStart": 5,
+   "expected": {
+    "context": "Zeile eins\n",
+    "segment": "Das hab ich so gmeint und jetzt ",
+    "trailing": ""
+   }
+  },
+  {
    "before": "ich bin hir",
    "explicit": false,
    "pinyin": false,

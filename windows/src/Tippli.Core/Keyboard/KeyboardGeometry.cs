@@ -108,8 +108,10 @@ public sealed class KeyboardGeometry
     public double Height { get; private init; }
     /// <summary>Unit width u of the letter rows.</summary>
     public double U { get; private init; }
-    /// <summary>Row height H.</summary>
+    /// <summary>Row height H (theme metrics; bottom row, number row, letter rows of the letters page).</summary>
     public double H { get; private init; }
+    /// <summary>Height of the letter/symbol rows (H on the letters page; symbol rows share the letters-page height).</summary>
+    public double LetterRowHeight { get; private init; }
     public double ToolbarHeight { get; private init; }
     public double LetterTop { get; private init; }
     public double LetterBottom { get; private init; }
@@ -168,17 +170,30 @@ public sealed class KeyboardGeometry
         var letterKeys = new List<KeyShape>();
         var bottomKeys = new List<KeyShape>();
 
-        double y = m.ToolbarHeight;
-        // Hex mode: H/6 above the first and below the last letter row. Symbol pages keep the same
-        // padding in hex mode so the keyboard height does not jump when switching pages.
-        if (req.HexMode) y += H / 6;
+        bool numberRow = !req.HexMode && req.NumberRow && req.Layouts.NumberRow.Count > 0;
+        int letterPageRows = (req.HexMode ? kb.Hex : kb.Normal).Rows.Count;
+        double lettersPageHeight = TotalHeight(m, H, req.HexMode, numberRow, letterPageRows);
 
+        double y = m.ToolbarHeight;
         double numberTop = double.NaN;
-        if (!req.HexMode && req.NumberRow && req.Page == KeyboardPage.Letters && req.Layouts.NumberRow.Count > 0)
+        double rowH = H;
+        if (req.Page == KeyboardPage.Letters)
         {
-            numberTop = y;
-            numberKeys.AddRange(ScaledRow(req.Layouts.NumberRow, KeyRowKind.Number, sp, inner, y, H, punct: null));
-            y += H;
+            // Hex mode: H/6 above the first and below the last letter row (§3.1).
+            if (req.HexMode) y += H / 6;
+            if (numberRow)
+            {
+                numberTop = y;
+                numberKeys.AddRange(ScaledRow(req.Layouts.NumberRow, KeyRowKind.Number, sp, inner, y, H, punct: null));
+                y += H;
+            }
+        }
+        else
+        {
+            // §3.7: symbol pages keep the height of the letters page (hex padding / number row included); the bottom
+            // row stays where it is and the symbol rows share the remaining height evenly.
+            double bottomTopOfLetters = lettersPageHeight - m.BottomPadding - H;
+            rowH = (bottomTopOfLetters - y) / Math.Max(1, letters.Rows.Count);
         }
 
         double letterTop = y;
@@ -187,7 +202,7 @@ public sealed class KeyboardGeometry
         for (int r = 0; r < letters.Rows.Count; r++)
         {
             var row = letters.Rows[r];
-            double rowTop = letterTop + r * H;
+            double rowTop = letterTop + r * rowH;
             double acc = 0;
             for (int i = 0; i < row.Keys.Count; i++)
             {
@@ -211,15 +226,15 @@ public sealed class KeyboardGeometry
                     letterKeys.Add(new KeyShape
                     {
                         Code = k.K, RowKind = KeyRowKind.Letter, Row = r, Index = i,
-                        X = sp + (row.Indent + acc) * u, Y = rowTop, Width = w * u, Height = H,
+                        X = sp + (row.Indent + acc) * u, Y = rowTop, Width = w * u, Height = rowH,
                     });
                 }
                 acc += w;
             }
         }
-        y = letterTop + letters.Rows.Count * H;
+        y = letterTop + letters.Rows.Count * rowH;
         double letterBottom = y;
-        if (req.HexMode) y += H / 6;
+        if (req.HexMode && req.Page == KeyboardPage.Letters) y += H / 6;
 
         double bottomTop = y;
         if (req.Layouts.BottomRows.TryGetValue(bottomId, out var bottomRow))
@@ -236,6 +251,7 @@ public sealed class KeyboardGeometry
             Height = y + m.BottomPadding,
             U = u,
             H = H,
+            LetterRowHeight = rowH,
             ToolbarHeight = m.ToolbarHeight,
             LetterTop = letterTop,
             LetterBottom = letterBottom,
@@ -297,7 +313,7 @@ public sealed class KeyboardGeometry
             return best;
         }
 
-        int row = (int)Math.Floor((y - LetterTop) / H);
+        int row = (int)Math.Floor((y - LetterTop) / LetterRowHeight);
         row = Math.Clamp(row, 0, Math.Max(0, LetterRowCount - 1));
         var rowKeys = LetterKeys.Where(kk => kk.Row == row).ToList();
         if (rowKeys.Count == 0) return null;

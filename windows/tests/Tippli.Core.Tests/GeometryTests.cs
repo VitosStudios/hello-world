@@ -100,6 +100,29 @@ public class GeometryTests
         Assert.Equal(Build("qwertz", hex: true).Height, g.Height, 6);
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    public void SymbolPagesKeepTheLettersPageHeight(bool hex, bool numberRow)
+    {
+        var letters = Build("qwertz", hex, numberRow: numberRow);
+        foreach (var page in new[] { KeyboardPage.Symbols1, KeyboardPage.Symbols2 })
+        {
+            var sym = Build("qwertz", hex, page, numberRow: numberRow);
+            Assert.Equal(letters.Height, sym.Height, 6);
+            Assert.Equal(letters.BottomRowTop, sym.BottomRowTop, 6); // bottom row does not move
+            Assert.Empty(sym.NumberKeys);
+            double expectedRow = (letters.BottomRowTop - letters.ToolbarHeight) / 3;
+            Assert.Equal(expectedRow, sym.LetterRowHeight, 6);
+            foreach (var key in sym.LetterKeys)
+            {
+                Assert.Equal(expectedRow, key.Height, 6);
+                Assert.Same(key, sym.HitTest(key.CenterX, key.CenterY));
+            }
+        }
+    }
+
     [Fact]
     public void ToolbarNeverHitsKeysAndEdgesClamp()
     {

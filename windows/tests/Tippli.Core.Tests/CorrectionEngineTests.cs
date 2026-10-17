@@ -138,6 +138,37 @@ public class CorrectionEngineTests
     }
 
     [Fact]
+    public void WordInternalCharactersDoNotCompleteAWord()
+    {
+        _engine.Options.Trigger = Triggers.Live;
+        Type("wie geht's");
+        _time.RunPending();
+        Assert.Single(_ai.Calls); // only the space after "wie"
+        Type(" ");
+        _time.RunPending();
+        Assert.Single(_ai.Calls); // in flight → rerun is pending
+        _ai.Last.Reply.SetResult("Wie ");
+        Assert.Equal(2, _ai.Calls.Count);
+        Assert.Equal("Wie geht's ", _ai.Last.Segment);
+        _ai.Last.Reply.SetResult("Wie geht's ");
+
+        foreach (var word in new[] { "E-Mail", "snake_case", "it’s" })
+        {
+            int before = _ai.Calls.Count;
+            Type(word);
+            _time.RunPending();
+            Assert.Equal(before, _ai.Calls.Count);
+            Type(" ");
+            _time.RunPending();
+            Assert.Equal(before + 1, _ai.Calls.Count);
+            _ai.Last.Reply.SetResult(_ai.Last.Segment);
+        }
+
+        foreach (var c in "'’-_") Assert.False(Text.TextAlgorithms.IsWordBoundaryChar(c));
+        foreach (var c in " ,.;:!?)\n") Assert.True(Text.TextAlgorithms.IsWordBoundaryChar(c));
+    }
+
+    [Fact]
     public void WordAndSentenceAndManualTriggers()
     {
         _engine.Options.Trigger = Triggers.Word;

@@ -266,8 +266,11 @@ public static class TextAlgorithms
         return false;
     }
 
-    /// <summary>Whitespace or punctuation (word-completing characters, §5.3).</summary>
-    public static bool IsWordBoundaryChar(char c) => IsWs(c) || char.IsPunctuation(c);
+    /// <summary>
+    /// Whitespace or punctuation that completes a word (§5.3). The word-internal characters <c>' ’ - _</c> never
+    /// complete a word, so "geht's" or "E-Mail" do not trigger in the middle of the word.
+    /// </summary>
+    public static bool IsWordBoundaryChar(char c) => (IsWs(c) || char.IsPunctuation(c)) && WordExtra.IndexOf(c) < 0;
 
     /// <summary>Upper-cases a key/alternative, special case ß → ẞ (§4.4).</summary>
     public static string UpperCaseKey(string s)

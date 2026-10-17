@@ -154,7 +154,8 @@ separate space keys (both type a space; both are cursor trackpads).
 `symbols1`, `$abc` → letters. Symbol pages are always drawn with **normal**
 (rectangular) geometry, also when hex mode is active, with
 `bottomRows.symbols`. The keyboard keeps the height of the letters page (hex
-padding / number row included) so it never jumps; the symbol rows share that
+padding / number row included) so it never jumps: the bottom row keeps its
+normal height and position, and the three symbol rows share the remaining
 height evenly. After typing a space or enter on a symbol page the
 keyboard returns to letters.
 
@@ -328,7 +329,7 @@ interface TextHost {
   user appended since the request was sent), `invalid` flag.
 * `history`: list of `{raw, corrected}` for the current field (max 20).
 * `lastCorrection` for undo: `{raw, corrected, suffixLength}`.
-* `suppressUntilBoundary` (after an undo, §5.5).
+* `protectedTail` (after an undo, §5.5): text the engine must not correct again.
 * Cache of the last 20 `segment → corrected` results.
 
 Any non-append change (delete, cursor move, selection change not caused by
@@ -336,14 +337,18 @@ the engine, field change, swipe delete/restore, emoji panel delete) sets
 `invalid = true` on the in-flight request and clears `typedSince`. Appends of
 text by the keyboard add to `typedSince`.
 
-### 5.2 Segment selection – `selectSegment(before, explicit, pinyin)`
+### 5.2 Segment selection – `selectSegment(before, explicit, pinyin, minStart = 0)`
 
 `before` = `textBeforeCursor(1000)`; limits `maxSegment = 400`,
 `maxContext = 600`. Indices are on the platform string; all cut points are
 whitespace or line boundaries, so units do not matter.
 
-1. `P` = index after the last `\n` (0 if none). `end = len(before)`,
-   `trailing = ""`.
+0. `minStart` (default 0) is the earliest index the segment may start at
+   (§5.5 undo protection, §10 unknown desktop buffer start). If it points
+   inside a word (`before[minStart−1]` is not whitespace), move it to after
+   the next whitespace (or to `len(before)` if there is none).
+1. `P` = max(index after the last `\n` (0 if none), `minStart`).
+   `end = len(before)`, `trailing = ""`.
 2. If **not** explicit and **not** pinyin and the last character is a letter
    or digit (a word in progress): let `k` be the index of the last whitespace;
    if `k < P` → return **null**; else `end = k+1`, `trailing = before[end:]`.
@@ -389,7 +394,7 @@ Explicit triggers (✨ button, flush before send, desktop hotkey) call
 `selectSegment(explicit = true)` – the word in progress is included.
 
 Skip the request when: AI off / field not allowed / no API key / selection
-non-empty / `suppressUntilBoundary` / `selectSegment` returned null / the
+non-empty / `selectSegment` returned null / the
 segment equals the last corrected output / the cache already has it (then
 apply the cached result directly).
 
@@ -410,7 +415,8 @@ the in-flight result is handled, trigger again.
    4. empty → **null**; contains `<context>` or `</context>` → **null**;
    5. if not pinyin and `len(trim(segment)) ≥ 12` and the result is longer
       than `1.5·len + 10` or shorter than `0.5·len − 5` → **null** (the model
-      answered instead of correcting);
+      answered instead of correcting). Lengths are counted in Unicode code
+      points (like the Python reference);
    6. return `leadingWhitespace(segment) + result + trailingWhitespace(segment)`.
 3. If the request is `invalid` or cleaning returned null → drop the result
    (if `rerun`, trigger again).
@@ -432,8 +438,15 @@ the in-flight result is handled, trigger again.
 Possible while `lastCorrection` exists and `textBeforeCursor` ends with
 `corrected + X` where X is whatever was typed since (no deletes/cursor moves).
 Undo = `delete(corrected[p:] + X)`, `insert(raw[p:] + X)` (same prefix rule),
-then set `suppressUntilBoundary = true` (no automatic correction until the
-user types a sentence end or newline) and clear `lastCorrection`.
+then clear `lastCorrection` and **protect** the restored text: store
+`protectedTail` = the last ≤ 120 characters of `textBeforeCursor` right after
+the undo. On every later trigger, if `before` contains `protectedTail`, pass
+`minStart` = index just after its last occurrence to `selectSegment` – the
+undone text is then only context and is never corrected again, while new words
+typed after it are converted live as usual. Clear `protectedTail` on a field
+change, a newline typed after it, or when it can no longer be found (the user
+deleted into it). Explicit triggers (✨, desktop hotkey) ignore the protection;
+flush before send keeps it.
 Triggered by the toolbar **Original** button or swipe right (§4.6).
 
 ### 5.6 Small text helpers (exact behaviour in tests/engine-cases.json)
@@ -525,7 +538,8 @@ content-type: application/json
   <preset.maxTokensField>: N,
   "temperature": 0.2                  (only if preset.sendTemperature)
   "reasoning_effort": "low"           (only if preset.reasoningEffort is set
-                                       and the model id starts with gpt-5 or o)
+                                       and the model id starts with "gpt-5" or
+                                       matches ^o[0-9] such as o3, o4-mini)
   "response_format": {"type":"json_object"}   (JSON tasks, only if preset.jsonMode) }
 ```
 
@@ -739,6 +753,13 @@ buffer; `delete` sends one Backspace per grapheme and updates the buffer;
 Buffer rules:
 
 * Printable characters (after dead-key composition) are appended.
+* **Unknown start:** after a reset the buffer usually begins in the middle of
+  existing text, so its first token may be the end of a word Tippli never saw.
+  While the start is unknown, pass `minStart` = index after the first
+  whitespace of the buffer to `selectSegment` (nothing is corrected before
+  that) and prefix the context with `…`. The start counts as known when the
+  buffer began in an empty field, or when UI Automation / the Accessibility
+  API reports that the focused field's value equals the buffer.
 * Backspace removes the last grapheme (if the buffer is empty nothing is
   known any more; keep it empty).
 * Reset (clear buffer, invalidate requests) on: mouse click, focus/foreground

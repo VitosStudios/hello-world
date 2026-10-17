@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -30,9 +31,12 @@ class EngineCasesTest {
         val all = group("selectSegment")
         assertTrue(all.isNotEmpty())
         for (c in all) {
-            val result = TextAlgorithms.selectSegment(c.str("before"), c.bool("explicit"), c.bool("pinyin"))
+            // Optional field: absent means 0 (SPEC §5.2 step 0).
+            val minStart = c["minStart"]?.jsonPrimitive?.int ?: 0
+            val result = TextAlgorithms.selectSegment(c.str("before"), c.bool("explicit"), c.bool("pinyin"), minStart)
             val expected = c.getValue("expected")
-            val label = "selectSegment(${c.str("before").take(60)}…, explicit=${c.bool("explicit")}, pinyin=${c.bool("pinyin")})"
+            val label = "selectSegment(${c.str("before").take(60)}…, explicit=${c.bool("explicit")}, " +
+                "pinyin=${c.bool("pinyin")}, minStart=$minStart)"
             if (expected.isNull()) {
                 assertEquals(label, null, result)
             } else {

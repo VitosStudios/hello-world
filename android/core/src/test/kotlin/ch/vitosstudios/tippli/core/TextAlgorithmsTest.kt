@@ -51,6 +51,16 @@ class TextAlgorithmsTest {
     }
 
     @Test
+    fun selectSegmentMinStartIsClampedAndNeverInsideAWord() {
+        val before = "alt alt neu wort "
+        assertEquals("neu wort ", TextAlgorithms.selectSegment(before, false, false, minStart = 8)?.segment)
+        assertEquals("neu wort ", TextAlgorithms.selectSegment(before, false, false, minStart = 6)?.segment) // inside "alt"
+        assertNull(TextAlgorithms.selectSegment(before, false, false, minStart = before.length))
+        assertNull(TextAlgorithms.selectSegment(before, false, false, minStart = 999))
+        assertEquals(before, TextAlgorithms.selectSegment(before, false, false, minStart = -3)?.segment)
+    }
+
+    @Test
     fun upperCase() {
         assertEquals("ẞ", Unicode.upper("ß"))
         assertEquals("Ä", Unicode.upper("ä"))

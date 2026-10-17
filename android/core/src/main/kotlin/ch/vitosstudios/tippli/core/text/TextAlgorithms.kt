@@ -26,15 +26,25 @@ object TextAlgorithms {
 
     private fun isWordChar(cp: Int) = Unicode.isLetterOrNumber(cp) || (cp < 0x10000 && WORD_EXTRA.indexOf(cp.toChar()) >= 0)
 
-    /** SPEC §5.2. Returns null when there is nothing to correct. */
+    /**
+     * SPEC §5.2. Returns null when there is nothing to correct. [minStart] is the
+     * earliest index the segment may start at (undo protection, SPEC §5.5).
+     */
     fun selectSegment(
         before: String,
         explicit: Boolean,
         pinyin: Boolean,
+        minStart: Int = 0,
         maxSegment: Int = MAX_SEGMENT,
         maxContext: Int = MAX_CONTEXT,
     ): Segment? {
-        val p = before.lastIndexOf('\n') + 1
+        // Step 0: never start inside a word – skip to after the next whitespace.
+        var min = minStart.coerceIn(0, before.length)
+        if (min > 0 && min < before.length && !isWhitespace(before[min - 1])) {
+            while (min < before.length && !isWhitespace(before[min])) min++
+            min = minOf(min + 1, before.length)
+        }
+        val p = maxOf(before.lastIndexOf('\n') + 1, min)
         var end = before.length
         var trailing = ""
         val inProgress = before.isNotEmpty() && Unicode.isLetterOrNumber(Unicode.lastCodePoint(before))

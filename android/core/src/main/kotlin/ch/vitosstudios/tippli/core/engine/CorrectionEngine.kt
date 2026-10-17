@@ -86,11 +86,22 @@ class CorrectionEngine(
 
     private var debounceJob: Job? = null
     private var inFlight: InFlight? = null
-    private var rerun = false
-    private var rerunExplicit = false
+    /**
+     * How a correction run was requested. Explicit runs include the word in
+     * progress; protected runs never start inside text restored by an undo.
+     */
+    private enum class RunMode(val explicit: Boolean, val protect: Boolean) {
+        AUTO(explicit = false, protect = true),
+        FLUSH(explicit = true, protect = true),
+        MANUAL(explicit = true, protect = false),
+    }
+
+    /** Pending rerun (SPEC §5.3), null when none. The stronger mode wins. */
+    private var rerun: RunMode? = null
     private val history = ArrayDeque<HistoryEntry>()
     private var lastCorrection: LastCorrection? = null
-    private var suppressUntilBoundary = false
+    /** Text restored by an undo that must not be corrected again (SPEC §5.5). */
+    private var protectedTail: String? = null
     private var lastCorrectedOutput: String? = null
     private var dirty = false
     private val cache = object : LinkedHashMap<String, String>(32, 0.75f, true) {
@@ -134,7 +145,7 @@ class CorrectionEngine(
         if (resetSession) sessionEnabled = true
         history.clear()
         lastCorrection = null
-        suppressUntilBoundary = false
+        protectedTail = null
         lastCorrectedOutput = null
         dirty = false
         lastError = null
@@ -182,7 +193,7 @@ class CorrectionEngine(
     fun hasPending(): Boolean {
         if (!isActive()) return false
         if (inFlight != null || debounceJob?.isActive == true) return true
-        return dirty && config.trigger != Trigger.MANUAL && !suppressUntilBoundary
+        return dirty && config.trigger != Trigger.MANUAL
     }
 
     val isBusy: Boolean get() = inFlight != null
@@ -201,10 +212,8 @@ class CorrectionEngine(
         inFlight?.let { if (!it.invalid) it.typedSince.append(text) }
         lastCorrection?.typed?.append(text)
         val boundary = TextAlgorithms.containsSentenceEnd(text)
-        if (suppressUntilBoundary) {
-            if (!boundary) return
-            suppressUntilBoundary = false
-        }
+        // A new paragraph after undone text ends its protection (SPEC §5.5).
+        if (text.contains('\n')) protectedTail = null
         dirty = true
         if (!autoTriggersAllowed()) return
         when (config.trigger) {
@@ -269,24 +278,26 @@ class CorrectionEngine(
         debounceJob = scope.launch {
             delay(config.pauseMs)
             debounceJob = null
-            if (autoTriggersAllowed()) requestCorrection(explicit = false)
+            if (autoTriggersAllowed()) requestCorrection(RunMode.AUTO)
         }
     }
 
     private fun triggerNow() {
         debounceJob?.cancel()
         debounceJob = null
-        requestCorrection(explicit = false)
+        requestCorrection(RunMode.AUTO)
     }
 
-    /** Toolbar ✨: correct now, including the word in progress (SPEC §5.3). */
+    /**
+     * Toolbar ✨: correct now, including the word in progress (SPEC §5.3). Ignores
+     * the undo protection – the user asked for it explicitly (SPEC §5.5).
+     */
     fun correctNow() {
         if (!isActive()) return
-        suppressUntilBoundary = false
         pausedUntil = Long.MIN_VALUE
         debounceJob?.cancel()
         debounceJob = null
-        requestCorrection(explicit = true)
+        requestCorrection(RunMode.MANUAL)
     }
 
     /**
@@ -298,33 +309,28 @@ class CorrectionEngine(
         if (!isActive()) return true
         debounceJob?.cancel()
         debounceJob = null
-        if (suppressUntilBoundary) return true
-        if (inFlight != null) {
-            rerun = true
-            rerunExplicit = true
-        } else {
-            requestCorrection(explicit = true)
-        }
+        requestCorrection(RunMode.FLUSH)
         if (!busy.value) return true
         return withTimeoutOrNull(config.waitOnSendMs) { busy.first { !it } } != null
     }
 
-    private fun requestCorrection(explicit: Boolean) {
+    private fun requestCorrection(mode: RunMode) {
         if (!isActive()) return
         val currentClient = client ?: return
-        inFlight?.let {
-            rerun = true
-            if (explicit) rerunExplicit = true
+        if (inFlight != null) {
+            val pending = rerun
+            rerun = if (pending == null || mode.ordinal > pending.ordinal) mode else pending
             return
         }
-        if (suppressUntilBoundary) return
+        val explicit = mode.explicit
         if (host.selectedText().isNotEmpty()) return
         val before = host.textBeforeCursor(BEFORE_CHARS)
+        val minStart = if (mode.protect) protectedStart(before) else 0
         // A word in progress that a non-explicit request leaves out stays "dirty", so a
         // flush before send still corrects it.
         dirty = !explicit && !config.language.pinyin && before.isNotEmpty() &&
             Unicode.isLetterOrNumber(Unicode.lastCodePoint(before))
-        val segment = TextAlgorithms.selectSegment(before, explicit, config.language.pinyin)
+        val segment = TextAlgorithms.selectSegment(before, explicit, config.language.pinyin, minStart)
         if (segment == null || segment.segment == lastCorrectedOutput) return
         cache[segment.segment]?.let { cached ->
             applyCorrection(segment, cached, typedSince = "")
@@ -375,17 +381,14 @@ class CorrectionEngine(
                     lastError = e
                     if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
                         pausedUntil = clock() + ERROR_PAUSE_MS
-                        rerun = false
-                        rerunExplicit = false
+                        rerun = null
                     }
                 }
             },
         )
-        if (rerun) {
-            val explicit = rerunExplicit
-            rerun = false
-            rerunExplicit = false
-            requestCorrection(explicit)
+        rerun?.let { mode ->
+            rerun = null
+            requestCorrection(mode)
         }
         updateBusy()
         notifyState()
@@ -433,13 +436,29 @@ class CorrectionEngine(
             host.delete(last.corrected.substring(p) + typed)
             host.insert(last.raw.substring(p) + typed)
         }
-        suppressUntilBoundary = true
+        // Protect the restored text: it is context from now on, never corrected again.
+        protectedTail = host.textBeforeCursor(PROTECTED_TAIL_CHARS).takeIf { it.isNotEmpty() }
         lastCorrectedOutput = null
         if (history.lastOrNull()?.let { it.raw == last.raw && it.corrected == last.corrected } == true) {
             history.removeLast()
         }
         notifyState()
         return true
+    }
+
+    /**
+     * `minStart` for [TextAlgorithms.selectSegment]: the index right after the last
+     * occurrence of the protected tail, or 0. The protection ends when the tail can
+     * no longer be found (the user deleted into it).
+     */
+    private fun protectedStart(before: String): Int {
+        val tail = protectedTail ?: return 0
+        val index = before.lastIndexOf(tail)
+        if (index < 0) {
+            protectedTail = null
+            return 0
+        }
+        return index + tail.length
     }
 
     // ------------------------------------------------------------------ mood check
@@ -493,8 +512,7 @@ class CorrectionEngine(
         debounceJob = null
         inFlight?.job?.cancel()
         inFlight = null
-        rerun = false
-        rerunExplicit = false
+        rerun = null
         moodJob?.cancel()
         moodJob = null
         updateBusy()
@@ -510,6 +528,7 @@ class CorrectionEngine(
 
     companion object {
         const val BEFORE_CHARS = 1000
+        const val PROTECTED_TAIL_CHARS = 120
         const val MAX_HISTORY = 20
         const val CACHE_SIZE = 20
         const val MAX_CONSECUTIVE_ERRORS = 3

@@ -25,8 +25,9 @@ class OpenAiClient(
     fun maxTokensFor(task: AiTask): Int =
         if (preset.reasoningEffort != null) maxOf(task.maxTokens, 4000) else task.maxTokens
 
+    /** `reasoning_effort` only for reasoning models: ids starting with `gpt-5` or matching `^o[0-9]` (SPEC §6.3). */
     private fun sendsReasoningEffort(): Boolean =
-        preset.reasoningEffort != null && (endpoint.model.startsWith("gpt-5") || endpoint.model.startsWith("o"))
+        preset.reasoningEffort != null && (endpoint.model.startsWith("gpt-5") || REASONING_O_SERIES.containsMatchIn(endpoint.model))
 
     /** True when the full request for [task] contains any optional parameter. */
     fun hasOptionalParams(task: AiTask): Boolean =
@@ -89,6 +90,8 @@ class OpenAiClient(
     }
 
     companion object {
+        private val REASONING_O_SERIES = Regex("^o[0-9]")
+
         /** `choices[0].message.content` (string or content parts); refusals → [AiErrorKind.REFUSED]. */
         fun parseResponse(body: String): String {
             val root = parseJsonObject(body)

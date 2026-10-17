@@ -214,6 +214,12 @@ class AiClientTest {
         server.enqueue(openAiOk())
         factory.create(endpoint("openai", "o4-mini")).complete(AiTask.CORRECTION, "S", "U")
         assertTrue(server.takeRequest().json().containsKey("reasoning_effort"))
+        // ^o[0-9] only: other ids starting with "o" are not reasoning models.
+        for (model in listOf("omni-moderation-latest", "openai/gpt-5-mini", "olmo-2")) {
+            server.enqueue(openAiOk())
+            factory.create(endpoint("openai", model)).complete(AiTask.CORRECTION, "S", "U")
+            assertFalse(model, server.takeRequest().json().containsKey("reasoning_effort"))
+        }
     }
 
     @Test

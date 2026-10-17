@@ -264,7 +264,7 @@ class CorrectionEngineTest {
     }
 
     @Test
-    fun undoSuppressesUntilSentenceEnd() = runTest {
+    fun undoProtectsRestoredTextButNewWordsAreStillConverted() = runTest {
         val e = env(Trigger.PAUSE)
         e.type("ich bin hir ")
         advanceTimeBy(701)
@@ -273,16 +273,64 @@ class CorrectionEngineTest {
         runCurrent()
         assertTrue(e.engine.undo())
         assertEquals("ich bin hir ", e.editor.value)
-        e.type("und so ")
-        advanceTimeBy(5000)
-        runCurrent()
-        assertEquals(1, e.ai.corrections.size)
-        // Flush respects the suppression too.
-        assertFalse(e.engine.hasPending())
-        e.type("weiter.")
-        runCurrent()
-        assertEquals(2, e.ai.corrections.size)
         assertFalse(e.engine.undo()) // nothing to undo any more
+        // New words after the undone text are converted; the undone text is only context.
+        e.type("und so ")
+        advanceTimeBy(701)
+        runCurrent()
+        val next = e.ai.corrections[1]
+        assertEquals("und so ", next.segment)
+        assertEquals("ich bin hir ", next.context)
+        next.reply.complete("und so ")
+        runCurrent()
+        // Flush before send keeps the protection (but includes the word in progress).
+        e.type("weiter")
+        val flush = async { e.engine.flush() }
+        runCurrent()
+        assertEquals("und so weiter", e.ai.corrections[2].segment)
+        e.ai.corrections[2].reply.complete("und so weiter")
+        runCurrent()
+        assertTrue(flush.await())
+        // ✨ ignores the protection.
+        e.engine.correctNow()
+        runCurrent()
+        assertEquals("ich bin hir und so weiter", e.ai.corrections[3].segment)
+        assertEquals("ich bin hir und so weiter", e.editor.value)
+    }
+
+    @Test
+    fun undoProtectionEndsWhenTheUserEditsTheRestoredText() = runTest {
+        val e = env(Trigger.PAUSE)
+        e.type("ich bin hir ")
+        advanceTimeBy(701)
+        runCurrent()
+        e.ai.corrections[0].reply.complete("Ich bin hier ")
+        runCurrent()
+        assertTrue(e.engine.undo())
+        // The user deletes into the protected text and retypes the word.
+        e.editor.delete("hir ")
+        e.engine.onNonAppendChange()
+        e.type("hiir ")
+        advanceTimeBy(701)
+        runCurrent()
+        assertEquals("ich bin hiir ", e.ai.corrections[1].segment)
+    }
+
+    @Test
+    fun undoProtectionEndsWithANewParagraph() = runTest {
+        val e = env(Trigger.PAUSE)
+        e.type("ich bin hir ")
+        advanceTimeBy(701)
+        runCurrent()
+        e.ai.corrections[0].reply.complete("Ich bin hier ")
+        runCurrent()
+        assertTrue(e.engine.undo())
+        e.type("\nneue zeile ")
+        advanceTimeBy(701)
+        runCurrent()
+        val last = e.ai.corrections.last()
+        assertEquals("neue zeile ", last.segment)
+        assertEquals("ich bin hir \n", last.context)
     }
 
     @Test

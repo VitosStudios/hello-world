@@ -30,8 +30,9 @@ public class EngineCasesTests
     public void SelectSegment(int index)
     {
         var c = Case("selectSegment", index);
+        int minStart = c.TryGetProperty("minStart", out var ms) && ms.ValueKind == JsonValueKind.Number ? ms.GetInt32() : 0;
         var result = TextAlgorithms.SelectSegment(c.GetProperty("before").GetString()!, c.GetProperty("explicit").GetBoolean(),
-            c.GetProperty("pinyin").GetBoolean());
+            c.GetProperty("pinyin").GetBoolean(), minStart);
         var expected = c.GetProperty("expected");
         if (expected.ValueKind == JsonValueKind.Null)
         {
@@ -104,6 +105,10 @@ public class EngineCasesTests
         Assert.Equal(c.GetProperty("expected").GetBoolean(), TextAlgorithms.CanApply(c.GetProperty("beforeNow").GetString()!,
             c.GetProperty("segment").GetString()!, c.GetProperty("trailing").GetString()!, c.GetProperty("typedSince").GetString()!));
     }
+
+    [Fact]
+    public void SharedCasesIncludeMinStart()
+        => Assert.Contains(Category("selectSegment"), c => c.TryGetProperty("minStart", out _));
 
     [Fact]
     public void ComputeEditNeverSplitsGraphemes()

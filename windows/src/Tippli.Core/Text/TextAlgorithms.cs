@@ -76,11 +76,22 @@ public static class TextAlgorithms
 
     // ---- §5.2 selectSegment -------------------------------------------------------------------------
 
-    public static SegmentSelection? SelectSegment(string before, bool explicitTrigger, bool pinyin,
+    /// <param name="minStart">
+    /// Earliest index the segment may start at (§5.5 undo protection, §10 unknown desktop buffer start). If it points
+    /// inside a word it is moved to after the next whitespace (step 0).
+    /// </param>
+    public static SegmentSelection? SelectSegment(string before, bool explicitTrigger, bool pinyin, int minStart = 0,
         int maxSegment = MaxSegment, int maxContext = MaxContext)
     {
         before ??= "";
-        int p = before.LastIndexOf('\n') + 1;
+        if (minStart < 0) minStart = 0;
+        if (minStart > 0 && minStart < before.Length && !IsWs(before[minStart - 1]))
+        {
+            // never start inside a word: skip to after the next whitespace
+            while (minStart < before.Length && !IsWs(before[minStart])) minStart++;
+            minStart = Math.Min(minStart + 1, before.Length);
+        }
+        int p = Math.Max(before.LastIndexOf('\n') + 1, minStart);
         int end = before.Length;
         string trailing = "";
         bool inProgress = before.Length > 0 && IsLetterOrDigit(RuneBefore(before, before.Length));
@@ -121,6 +132,7 @@ public static class TextAlgorithms
             segStart = p;
         }
 
+        if (segStart >= end) return null; // minStart at/after the end: nothing to correct
         string segment = before[segStart..end];
         if (!HasLetter(segment)) return null;
 

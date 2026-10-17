@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "about": "Typing languages. 'keyboard' is the default layout id from layouts.json (user may override per language). 'promptName' and 'rules' are inserted into the AI prompts. 'pinyin': true means the trailing word is NOT excluded from pause corrections and the output length sanity check is skipped (SPEC 5.2/5.3).",
+  "languages": [
+    {
+      "id": "de-CH",
+      "name": "Deutsch (Schweiz)",
+      "short": "DE-CH",
+      "keyboard": "qwertz",
+      "promptName": "Swiss Standard German (de-CH)",
+      "rules": "Always write 'ss' instead of 'ß'. Capitalize nouns. Swiss vocabulary and Swiss spelling conventions are correct, do not replace them with German-German words."
+    },
+    {
+      "id": "gsw",
+      "name": "Schweizerdeutsch (Mundart)",
+      "short": "CH",
+      "keyboard": "qwertz",
+      "promptName": "Swiss German dialect (Schwiizerdütsch / Mundart)",
+      "rules": "The user writes Swiss German dialect. Keep the dialect and its words. Never translate into Standard German. Only fix obvious typos, make the spelling consistent and readable, and fix punctuation."
+    },
+    {
+      "id": "de-DE",
+      "name": "Deutsch (Deutschland/Österreich)",
+      "short": "DE",
+      "keyboard": "qwertz",
+      "promptName": "German (de-DE)",
+      "rules": "Use standard German orthography including 'ß' where it is correct. Capitalize nouns."
+    },
+    {
+      "id": "en",
+      "name": "English",
+      "short": "EN",
+      "keyboard": "qwerty",
+      "promptName": "English",
+      "rules": "Keep the user's choice of British or American spelling if it is recognisable; otherwise use American spelling."
+    },
+    {
+      "id": "fr-CH",
+      "name": "Français (Suisse)",
+      "short": "FR-CH",
+      "keyboard": "qwertz-ch-fr",
+      "promptName": "Swiss French (fr-CH)",
+      "rules": "Use correct French accents. Swiss number words (septante, huitante, nonante) are correct."
+    },
+    {
+      "id": "fr",
+      "name": "Français (France)",
+      "short": "FR",
+      "keyboard": "azerty",
+      "promptName": "French (fr-FR)",
+      "rules": "Use correct French accents and French punctuation spacing."
+    },
+    {
+      "id": "it",
+      "name": "Italiano",
+      "short": "IT",
+      "keyboard": "qwerty",
+      "promptName": "Italian",
+      "rules": "Use correct Italian accents (è, é, à, ò, ù, ì)."
+    },
+    {
+      "id": "es",
+      "name": "Español",
+      "short": "ES",
+      "keyboard": "qwerty-es",
+      "promptName": "Spanish",
+      "rules": "Use correct accents, ñ and opening question/exclamation marks (¿ ¡)."
+    },
+    {
+      "id": "pt",
+      "name": "Português",
+      "short": "PT",
+      "keyboard": "qwerty",
+      "promptName": "Portuguese",
+      "rules": "Use correct Portuguese accents (ã, õ, ç, á, é, ê, ó, ô)."
+    },
+    {
+      "id": "zh-Hans",
+      "name": "中文 简体 (拼音输入)",
+      "short": "简",
+      "keyboard": "pinyin",
+      "pinyin": true,
+      "promptName": "Simplified Chinese (input typed as Hanyu Pinyin)",
+      "rules": "The user types Hanyu Pinyin without tones, often sloppy, with or without spaces, sometimes mixed with Chinese characters that are already converted. Convert all pinyin into natural Simplified Chinese characters and use Chinese punctuation (，。？！：；“”). Keep clearly non-pinyin Latin words (names, English words, brands) as they are. Characters that are already Chinese stay unchanged unless clearly wrong."
+    },
+    {
+      "id": "zh-Hant",
+      "name": "中文 繁體 (拼音輸入)",
+      "short": "繁",
+      "keyboard": "pinyin",
+      "pinyin": true,
+      "promptName": "Traditional Chinese (input typed as Hanyu Pinyin)",
+      "rules": "The user types Hanyu Pinyin without tones, often sloppy, with or without spaces, sometimes mixed with Chinese characters that are already converted. Convert all pinyin into natural Traditional Chinese characters and use Chinese punctuation (，。？！：；「」). Keep clearly non-pinyin Latin words (names, English words, brands) as they are. Characters that are already Chinese stay unchanged unless clearly wrong."
+    },
+    {
+      "id": "auto",
+      "name": "Automatisch erkennen",
+      "short": "AUTO",
+      "keyboard": "qwertz",
+      "promptName": "the language the user is writing in (detect it from segment and context)",
+      "rules": "Detect the language from the text. Correct within that language. Never translate."
+    }
+  ],
+  "translateTargets": [
+    { "id": "de-CH", "name": "Deutsch (Schweiz)", "promptName": "Swiss Standard German (use ss instead of ß)" },
+    { "id": "de-DE", "name": "Deutsch", "promptName": "German" },
+    { "id": "en", "name": "English", "promptName": "English" },
+    { "id": "fr", "name": "Français", "promptName": "French" },
+    { "id": "it", "name": "Italiano", "promptName": "Italian" },
+    { "id": "es", "name": "Español", "promptName": "Spanish" },
+    { "id": "pt", "name": "Português", "promptName": "Portuguese" },
+    { "id": "zh-Hans", "name": "中文 (简体)", "promptName": "Simplified Chinese" },
+    { "id": "zh-Hant", "name": "中文 (繁體)", "promptName": "Traditional Chinese" },
+    { "id": "gsw", "name": "Schweizerdeutsch", "promptName": "Swiss German dialect (Zurich style Mundart)" }
+  ]
+}

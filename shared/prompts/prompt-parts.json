@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "about": "Small text parts inserted into the prompt templates. See shared/SPEC.md section 6.4.",
+  "uiLanguage": "German (Swiss spelling: write ss instead of ß)",
+  "strengthRules": {
+    "light": "- Be conservative: only fix clear typos and spelling. Leave grammar, punctuation and style as they are.",
+    "normal": "- Fix spelling, grammar and punctuation, but keep everything else as typed.",
+    "strong": "- You may also smooth clumsy grammar and sentence structure slightly, but the wording must stay recognisably the user's own."
+  },
+  "rewriteVariants": [
+    { "id": "formal", "label": "Formeller", "instruction": "more formal and polite" },
+    { "id": "casual", "label": "Lockerer", "instruction": "more relaxed and casual" },
+    { "id": "shorter", "label": "Kürzer", "instruction": "shorter and to the point" },
+    { "id": "friendlier", "label": "Freundlicher", "instruction": "warmer and friendlier" }
+  ],
+  "sections": {
+    "rewrites": "rewrites",
+    "explanations": "explanations",
+    "writing": "tips",
+    "emotion": "emotion"
+  },
+  "testSegment": "hallo wie gehs dir hzete?"
+}

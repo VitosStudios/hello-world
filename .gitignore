@@ -1,0 +1,33 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Apple
+apple/**/.build/
+apple/**/*.xcodeproj/
+apple/**/DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# Windows / .NET
+windows/**/bin/
+windows/**/obj/
+windows/**/publish/
+*.user
+.vs/
+TestResults/
+
+# Python
+__pycache__/

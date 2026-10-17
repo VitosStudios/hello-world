@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "about": "Keyboard layouts shared by all Tippli platforms. See shared/SPEC.md section 3 for geometry rules. A key is either a string (width 1) or {\"k\": key, \"w\": widthUnits}. Keys starting with $ are special keys.",
+  "specialKeys": {
+    "$shift": "Shift. Tap = next letter uppercase, double tap or long press = caps lock.",
+    "$back": "Backspace. Long press = auto repeat, accelerating to whole words.",
+    "$space": "Space. Horizontal drag = move cursor.",
+    "$enter": "Enter or the editor action (send/search/go).",
+    "$123": "Open symbols page 1.",
+    "$sym2": "Open symbols page 2.",
+    "$sym1": "Back to symbols page 1.",
+    "$abc": "Back to letters.",
+    "$emoji": "Open the emoji panel.",
+    "$nextkb": "Next system keyboard. Only rendered where the OS requires it (iOS needsInputModeSwitchKey)."
+  },
+  "bottomRows": {
+    "normal": [
+      { "k": "$123", "w": 1.5 },
+      { "k": "$emoji", "w": 1 },
+      { "k": ",", "w": 1 },
+      { "k": "$space", "w": 4 },
+      { "k": ".", "w": 1 },
+      { "k": "$enter", "w": 1.5 }
+    ],
+    "hex": [
+      { "k": "$123", "w": 1.5 },
+      { "k": "$emoji", "w": 1.25 },
+      { "k": ",", "w": 1 },
+      { "k": "$space", "w": 3 },
+      { "k": ".", "w": 1 },
+      { "k": "$back", "w": 1.5 },
+      { "k": "$enter", "w": 1.75 }
+    ],
+    "symbols": [
+      { "k": "$abc", "w": 1.5 },
+      { "k": "$emoji", "w": 1 },
+      { "k": ",", "w": 1 },
+      { "k": "$space", "w": 4 },
+      { "k": ".", "w": 1 },
+      { "k": "$enter", "w": 1.5 }
+    ]
+  },
+  "numberRow": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+  "keyboards": {
+    "qwertz": {
+      "name": "QWERTZ (Deutsch/Schweiz, ä ö ü)",
+      "normal": {
+        "width": 11,
+        "rows": [
+          { "keys": ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p", "ü"] },
+          { "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ö", "ä"] },
+          { "indent": 0.5, "keys": [{ "k": "$shift", "w": 1.5 }, "y", "x", "c", "v", "b", "n", "m", { "k": "$back", "w": 1.5 }] }
+        ]
+      },
+      "hex": {
+        "width": 11.5,
+        "rows": [
+          { "indent": 0, "keys": ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p", "ü"] },
+          { "indent": 0.5, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ö", "ä"] },
+          { "indent": 1, "keys": ["$shift", "y", "x", "c", "$space", "$space", "v", "b", "n", "m"] }
+        ]
+      }
+    },
+    "qwertz-ch-fr": {
+      "name": "QWERTZ (Suisse romande, è é à)",
+      "normal": {
+        "width": 11,
+        "rows": [
+          { "keys": ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p", "è"] },
+          { "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "é", "à"] },
+          { "indent": 0.5, "keys": [{ "k": "$shift", "w": 1.5 }, "y", "x", "c", "v", "b", "n", "m", { "k": "$back", "w": 1.5 }] }
+        ]
+      },
+      "hex": {
+        "width": 11.5,
+        "rows": [
+          { "indent": 0, "keys": ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p", "è"] },
+          { "indent": 0.5, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "é", "à"] },
+          { "indent": 1, "keys": ["$shift", "y", "x", "c", "$space", "$space", "v", "b", "n", "m"] }
+        ]
+      }
+    },
+    "qwerty": {
+      "name": "QWERTY",
+      "normal": {
+        "width": 10,
+        "rows": [
+          { "keys": ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "indent": 0.5, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l"] },
+          { "keys": [{ "k": "$shift", "w": 1.5 }, "z", "x", "c", "v", "b", "n", "m", { "k": "$back", "w": 1.5 }] }
+        ]
+      },
+      "hex": {
+        "width": 11,
+        "rows": [
+          { "indent": 0.5, "keys": ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "indent": 1, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l"] },
+          { "indent": 0.5, "keys": ["$shift", "z", "x", "c", "$space", "$space", "v", "b", "n", "m"] }
+        ]
+      }
+    },
+    "qwerty-es": {
+      "name": "QWERTY (Español, ñ)",
+      "normal": {
+        "width": 10,
+        "rows": [
+          { "keys": ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"] },
+          { "keys": [{ "k": "$shift", "w": 1.5 }, "z", "x", "c", "v", "b", "n", "m", { "k": "$back", "w": 1.5 }] }
+        ]
+      },
+      "hex": {
+        "width": 11,
+        "rows": [
+          { "indent": 0.5, "keys": ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "indent": 1, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"] },
+          { "indent": 0.5, "keys": ["$shift", "z", "x", "c", "$space", "$space", "v", "b", "n", "m"] }
+        ]
+      }
+    },
+    "azerty": {
+      "name": "AZERTY (Français)",
+      "normal": {
+        "width": 10,
+        "rows": [
+          { "keys": ["a", "z", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "keys": ["q", "s", "d", "f", "g", "h", "j", "k", "l", "m"] },
+          { "keys": [{ "k": "$shift", "w": 1.5 }, "w", "x", "c", "v", "b", "n", "'", { "k": "$back", "w": 1.5 }] }
+        ]
+      },
+      "hex": {
+        "width": 11,
+        "rows": [
+          { "indent": 0.5, "keys": ["a", "z", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "indent": 1, "keys": ["q", "s", "d", "f", "g", "h", "j", "k", "l", "m"] },
+          { "indent": 0.5, "keys": ["$shift", "w", "x", "c", "$space", "$space", "v", "b", "n", "'"] }
+        ]
+      }
+    },
+    "pinyin": {
+      "name": "拼音 Pinyin (QWERTY)",
+      "bottomPunctuation": { ",": "，", ".": "。" },
+      "normal": {
+        "width": 10,
+        "rows": [
+          { "keys": ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "indent": 0.5, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l"] },
+          { "keys": [{ "k": "$shift", "w": 1.5 }, "z", "x", "c", "v", "b", "n", "m", { "k": "$back", "w": 1.5 }] }
+        ]
+      },
+      "hex": {
+        "width": 11,
+        "rows": [
+          { "indent": 0.5, "keys": ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"] },
+          { "indent": 1, "keys": ["a", "s", "d", "f", "g", "h", "j", "k", "l"] },
+          { "indent": 0.5, "keys": ["$shift", "z", "x", "c", "$space", "$space", "v", "b", "n", "m"] }
+        ]
+      }
+    }
+  },
+  "symbolPages": {
+    "symbols1": {
+      "width": 10,
+      "rows": [
+        { "keys": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] },
+        { "keys": ["-", "/", ":", ";", "(", ")", "€", "&", "@", "\""] },
+        { "keys": [{ "k": "$sym2", "w": 1.5 }, ".", ",", "?", "!", "'", "+", "=", { "k": "$back", "w": 1.5 }] }
+      ]
+    },
+    "symbols2": {
+      "width": 10,
+      "rows": [
+        { "keys": ["[", "]", "{", "}", "#", "%", "^", "*", "<", ">"] },
+        { "keys": ["_", "\\", "|", "~", "$", "£", "¥", "•", "°", "§"] },
+        { "keys": [{ "k": "$sym1", "w": 1.5 }, "…", "¿", "¡", "«", "»", "`", "´", { "k": "$back", "w": 1.5 }] }
+      ]
+    }
+  }
+}

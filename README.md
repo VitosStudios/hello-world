@@ -98,8 +98,11 @@ Without an Android SDK, `settings.gradle.kts` builds only the JVM modules and sa
 `.github/workflows/ci.yml` runs on every push and pull request:
 
 - **Round-trip and format tests** with LibreOffice installed as the second reader.
-- **Android app**: `assembleDebug`, app unit tests and Roborazzi screenshots. The debug APK is
-  uploaded as the `app-debug-apk` artifact, screenshots as `screenshots`.
+- **Android app**: `assembleDebug`, app unit tests and Roborazzi screenshots. The unit tests
+  include Robolectric smoke tests (`EditorSmokeTest`) that open corpus DOCX, XLSX and PPTX files
+  and a PNG through the same "Open with" intent another app would send, check that each editor
+  shows the content, and type into a document. The debug APK is uploaded as the `app-debug-apk`
+  artifact, screenshots (components and the opened editors) as `screenshots`.
 - A **signed release APK** is built when these repository secrets exist:
   `SUITE_KEYSTORE_BASE64` (base64 of the keystore), `SUITE_KEYSTORE_PASSWORD`, `SUITE_KEY_ALIAS`,
   `SUITE_KEY_PASSWORD`.

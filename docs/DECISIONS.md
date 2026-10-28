@@ -112,6 +112,9 @@ colour in black so document colours keep their meaning in dark mode.
 **D-020. Screenshot tests record in CI.** Roborazzi records component screenshots on every CI run
 and uploads them as an artifact. Golden images are not committed yet because they must be produced
 on the CI image; once reviewed, commit them and switch the step to `verifyRoborazziDebug`.
+`EditorSmokeTest` drives the whole app (intent, repository, Room, navigation, editor) in
+Robolectric. It checks wiring and threading, not device rendering or performance; it found that
+the "Open with" handler navigated from a background thread, which is now fixed.
 
 **D-021. Video preview.** The preview plays the clipped clips as an ExoPlayer playlist with
 per-clip volume and draws overlays in Compose. Background music is mixed only in the export, which

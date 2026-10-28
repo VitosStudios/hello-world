@@ -47,11 +47,11 @@ class SheetsViewModel(container: AppContainer, handle: SavedStateHandle) : Offic
 
     override fun verifyWritten(file: File) = XlsxWorkbook.verifyReadable(file)
 
-    override fun snapshotForSave(doc: XlsxWorkbook): SaveSnapshot {
+    override fun snapshotForSave(doc: XlsxWorkbook): OfficeEditorViewModel.SaveSnapshot {
         if (!isCsv) return super.snapshotForSave(doc)
         val text = doc.exportCsv(0, csvDelimiter, displayed = false)
         val marker = doc.undo.stateMarker
-        return object : SaveSnapshot {
+        return object : OfficeEditorViewModel.SaveSnapshot {
             override val undoMarker: Long = marker
             override fun write(target: File) {
                 AtomicFile.write(target, verify = { tmp -> Csv.parse(tmp.readText(), csvDelimiter) }) { it.write(text.toByteArray()) }

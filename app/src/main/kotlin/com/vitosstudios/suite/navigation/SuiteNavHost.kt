@@ -1,5 +1,7 @@
 package com.vitosstudios.suite.navigation
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +34,7 @@ import com.vitosstudios.suite.feature.video.VideoEditorScreen
 import com.vitosstudios.suite.ui.components.EmptyState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
+import kotlinx.coroutines.CancellationException
 
 object Routes {
     const val HOME = "home"
@@ -47,7 +50,8 @@ object Routes {
 @Composable
 fun SuiteNavHost() {
     val nav = rememberNavController()
-    val container = LocalContext.current.appContainer
+    val context = LocalContext.current
+    val container = context.appContainer
 
     LaunchedEffect(Unit) {
         container.incomingUris.collect { uri ->
@@ -55,8 +59,11 @@ fun SuiteNavHost() {
             try {
                 val e = container.files.open(uri)
                 nav.navigate(Routes.editor(e.id))
-            } catch (_: Exception) {
-                // The home screen shows the file list; an unsupported file is simply not opened.
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (ex: Exception) {
+                Log.w("SuiteNavHost", "Cannot open $uri", ex)
+                Toast.makeText(context, "Can't open this file: ${ex.message ?: ex.javaClass.simpleName}", Toast.LENGTH_LONG).show()
             }
         }
     }

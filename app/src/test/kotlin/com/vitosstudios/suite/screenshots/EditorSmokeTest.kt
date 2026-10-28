@@ -7,15 +7,19 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -44,6 +48,17 @@ class EditorSmokeTest {
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()
 
+    /** Waits for [matcher]; on timeout the failure message contains the whole semantics tree. */
+    private fun waitFor(matcher: SemanticsMatcher, timeoutMs: Long) {
+        try {
+            compose.waitUntilAtLeastOneExists(matcher, timeoutMs)
+        } catch (e: ComposeTimeoutException) {
+            val tree = runCatching { compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString() }
+                .getOrElse { "(no semantics tree: $it)" }
+            throw AssertionError("Timed out waiting for ${matcher.description}. Screen:\n$tree", e)
+        }
+    }
+
     private fun open(file: File): ActivityScenario<MainActivity> {
         val copy = File(context.cacheDir, "in-" + file.name)
         file.copyTo(copy, overwrite = true)
@@ -54,7 +69,7 @@ class EditorSmokeTest {
     @Test
     fun homeScreen() {
         ActivityScenario.launch(MainActivity::class.java).use {
-            compose.waitUntilAtLeastOneExists(hasText("Create new"), 15_000)
+            waitFor(hasText("Create new"), 15_000)
             compose.onRoot().captureRoboImage()
         }
     }
@@ -62,12 +77,12 @@ class EditorSmokeTest {
     @Test
     fun documentOpensAndAcceptsTyping() {
         open(Corpus.file("docx/pylib-features.docx")).use {
-            compose.waitUntilAtLeastOneExists(hasText("Heading level 1", substring = true), 20_000)
+            waitFor(hasText("Heading level 1", substring = true), 20_000)
             compose.onRoot().captureRoboImage()
             compose.onNodeWithText("Heading level 2", substring = true).performClick()
-            compose.waitUntilAtLeastOneExists(hasContentDescription("Paragraph editor"), 5_000)
+            waitFor(hasContentDescription("Paragraph editor"), 5_000)
             compose.onNodeWithContentDescription("Paragraph editor").performTextInput("Typed ")
-            compose.waitUntilAtLeastOneExists(hasText("Typed", substring = true), 5_000)
+            waitFor(hasText("Typed", substring = true), 5_000)
             compose.onNodeWithContentDescription("Undo").assertExists()
             compose.onRoot().captureRoboImage()
         }
@@ -76,7 +91,7 @@ class EditorSmokeTest {
     @Test
     fun wordDocumentWithLockedContentOpens() {
         open(Corpus.file("docx/word-poi-drawing.docx")).use {
-            compose.waitUntilAtLeastOneExists(hasText("DOCX"), 20_000)
+            waitFor(hasText("DOCX"), 20_000)
             compose.onRoot().captureRoboImage()
         }
     }
@@ -84,7 +99,7 @@ class EditorSmokeTest {
     @Test
     fun spreadsheetOpens() {
         open(Corpus.file("xlsx/pylib-features.xlsx")).use {
-            compose.waitUntilAtLeastOneExists(hasContentDescription("Sheet Data", substring = true), 20_000)
+            waitFor(hasContentDescription("Sheet Data", substring = true), 20_000)
             compose.onRoot().captureRoboImage()
         }
     }
@@ -92,7 +107,7 @@ class EditorSmokeTest {
     @Test
     fun presentationOpens() {
         open(Corpus.file("pptx/pylib-features.pptx")).use {
-            compose.waitUntilAtLeastOneExists(hasContentDescription("Slide 1", substring = true), 20_000)
+            waitFor(hasContentDescription("Slide 1", substring = true), 20_000)
             compose.onRoot().captureRoboImage()
         }
     }
@@ -100,7 +115,7 @@ class EditorSmokeTest {
     @Test
     fun powerPointDeckOpens() {
         open(Corpus.file("pptx/powerpoint-poi-SampleShow.pptx")).use {
-            compose.waitUntilAtLeastOneExists(hasContentDescription("Slide 1", substring = true), 20_000)
+            waitFor(hasContentDescription("Slide 1", substring = true), 20_000)
             compose.onRoot().captureRoboImage()
         }
     }
@@ -115,7 +130,7 @@ class EditorSmokeTest {
         }
         png.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
         open(png).use {
-            compose.waitUntilAtLeastOneExists(hasContentDescription("Edited photo"), 20_000)
+            waitFor(hasContentDescription("Edited photo"), 20_000)
             compose.onRoot().captureRoboImage()
         }
     }

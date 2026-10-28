@@ -57,7 +57,16 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
-            all { it.maxHeapSize = "2g" }
+            all {
+                it.maxHeapSize = "2g"
+                // Failures print their full stack trace and the app's log, so CI logs are enough to diagnose them.
+                it.systemProperty("robolectric.logging", "stdout")
+                it.testLogging {
+                    events("failed")
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                    showStandardStreams = true
+                }
+            }
         }
     }
 

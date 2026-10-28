@@ -65,7 +65,7 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
       - name: Build debug APK
-        run: ./gradlew --stacktrace :app:assembleDebug
+        run: ./gradlew :app:assembleDebug
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -73,9 +73,9 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
       - name: App unit tests
-        run: ./gradlew --stacktrace :app:testDebugUnitTest
+        run: ./gradlew :app:testDebugUnitTest
       - name: Screenshot tests (record)
-        run: ./gradlew --stacktrace :app:recordRoborazziDebug
+        run: ./gradlew :app:recordRoborazziDebug
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

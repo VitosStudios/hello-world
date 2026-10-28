@@ -275,7 +275,7 @@ fun VideoEditorScreen(onBack: () -> Unit, vm: VideoViewModel = viewModel(factory
                             LabeledSlider("Volume", c.volume * 100, 0f..200f, onChange = { v -> vm.drag { it.setClipVolume(i, v / 100f) } }, onChangeFinished = { vm.endDrag() }, format = { "${it.toInt()} %" })
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Mute", modifier = Modifier.weight(1f))
-                                Switch(checked = c.muted, onCheckedChange = { m -> vm.apply { it.setClipMuted(i, m) } })
+                                Switch(checked = c.muted, onCheckedChange = { m -> vm.change { it.setClipMuted(i, m) } })
                             }
                         }
                     }
@@ -285,13 +285,13 @@ fun VideoEditorScreen(onBack: () -> Unit, vm: VideoViewModel = viewModel(factory
                         Text("One audio track is mixed under the video when you export.", style = MaterialTheme.typography.bodySmall)
                         Row {
                             OutlinedButton(onClick = { pickMusic.launch(arrayOf("audio/*")) }) { Text(if (m == null) "Choose music" else "Replace music") }
-                            if (m != null) TextButton(onClick = { vm.apply { it.removeMusic() } }) { Text("Remove") }
+                            if (m != null) TextButton(onClick = { vm.change { it.removeMusic() } }) { Text("Remove") }
                         }
                         if (m != null) {
                             LabeledSlider("Music volume", m.volume * 100, 0f..200f, onChange = { v -> vm.drag { it.setMusicVolume(v / 100f) } }, onChangeFinished = { vm.endDrag() }, format = { "${it.toInt()} %" })
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Loop music", modifier = Modifier.weight(1f))
-                                Switch(checked = m.loop, onCheckedChange = { l -> vm.apply { it.setMusicLoop(l) } })
+                                Switch(checked = m.loop, onCheckedChange = { l -> vm.change { it.setMusicLoop(l) } })
                             }
                         }
                     }
@@ -301,7 +301,7 @@ fun VideoEditorScreen(onBack: () -> Unit, vm: VideoViewModel = viewModel(factory
                         Text("The original clips are not changed; a new MP4 file is created.", style = MaterialTheme.typography.bodySmall)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                             ExportPreset.entries.forEach { p ->
-                                FilterChip(selected = vm.timeline.preset == p, onClick = { vm.apply { it.withPreset(p) } }, label = { Text("${p.label} (${p.width}×${p.height})") })
+                                FilterChip(selected = vm.timeline.preset == p, onClick = { vm.change { it.withPreset(p) } }, label = { Text("${p.label} (${p.width}×${p.height})") })
                             }
                         }
                         Button(
@@ -364,7 +364,7 @@ private fun TextOverlayPanel(vm: VideoViewModel) {
         Column(Modifier.fillMaxWidth().padding(vertical = Spacing.s).border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(Spacing.s)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("“${o.text}” ${formatMs(o.startMs)}–${formatMs(o.endMs)}", modifier = Modifier.weight(1f))
-                IconButton(onClick = { vm.apply { it.removeOverlay(o.id) } }) { Icon(Icons.Default.Delete, "Remove overlay") }
+                IconButton(onClick = { vm.change { it.removeOverlay(o.id) } }) { Icon(Icons.Default.Delete, "Remove overlay") }
             }
             RangeSlider(
                 value = o.startMs.toFloat()..o.endMs.toFloat(),
@@ -376,12 +376,12 @@ private fun TextOverlayPanel(vm: VideoViewModel) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                 listOf(OverlayAnchor.TOP_CENTER to (0.5f to 0.1f), OverlayAnchor.CENTER to (0.5f to 0.5f), OverlayAnchor.BOTTOM_CENTER to (0.5f to 0.9f),
                     OverlayAnchor.TOP_LEFT to (0.05f to 0.08f), OverlayAnchor.BOTTOM_RIGHT to (0.95f to 0.92f)).forEach { (a, pos) ->
-                    FilterChip(selected = o.anchor == a, onClick = { vm.apply { t -> t.updateOverlay(o.id) { it.copy(anchor = a, x = pos.first, y = pos.second) } } },
+                    FilterChip(selected = o.anchor == a, onClick = { vm.change { t -> t.updateOverlay(o.id) { it.copy(anchor = a, x = pos.first, y = pos.second) } } },
                         label = { Text(a.name.lowercase().replace('_', ' ')) })
                 }
-                FilterChip(selected = o.bold, onClick = { vm.apply { t -> t.updateOverlay(o.id) { it.copy(bold = !it.bold) } } }, label = { Text("Bold") })
+                FilterChip(selected = o.bold, onClick = { vm.change { t -> t.updateOverlay(o.id) { it.copy(bold = !it.bold) } } }, label = { Text("Bold") })
             }
-            ColorPalette(selected = Color(o.colorArgb), onSelect = { c -> c?.let { col -> vm.apply { t -> t.updateOverlay(o.id) { it.copy(colorArgb = col.toArgb()) } } } }, allowAutomatic = false)
+            ColorPalette(selected = Color(o.colorArgb), onSelect = { c -> c?.let { col -> vm.change { t -> t.updateOverlay(o.id) { it.copy(colorArgb = col.toArgb()) } } } }, allowAutomatic = false)
         }
     }
     OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("New text") }, modifier = Modifier.fillMaxWidth())
@@ -389,7 +389,7 @@ private fun TextOverlayPanel(vm: VideoViewModel) {
         enabled = text.isNotBlank(),
         onClick = {
             val start = vm.positionMs
-            vm.apply { it.addOverlay(text, start, minOf(start + 3000, it.durationMs)) }
+            vm.change { it.addOverlay(text, start, minOf(start + 3000, it.durationMs)) }
             text = ""
         },
         modifier = Modifier.padding(top = Spacing.s),

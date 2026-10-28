@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -374,5 +373,3 @@ private fun ToolPanel(vm: PhotoViewModel) {
     }
 }
 
-@Suppress("unused")
-private fun unusedAlert() = AlertDialog::class

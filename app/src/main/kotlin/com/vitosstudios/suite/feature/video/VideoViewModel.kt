@@ -84,7 +84,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
         scheduleSave()
     }
 
-    fun apply(op: (Timeline) -> Timeline) { session.apply(op); publish() }
+    fun change(op: (Timeline) -> Timeline) { session.apply(op); publish() }
     fun drag(op: (Timeline) -> Timeline) { session.drag(op); publish() }
     fun endDrag() { session.endDrag(); publish() }
     fun undo() { session.undo(); publish() }
@@ -111,7 +111,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
             try {
                 takePermission(uri)
                 val d = withContext(Dispatchers.IO) { durationOf(app, uri) }
-                apply { it.addClip(uri.toString(), d) }
+                change { it.addClip(uri.toString(), d) }
             } catch (ex: Exception) {
                 messages.emit("This clip cannot be added: ${ex.message}")
             }
@@ -123,7 +123,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
             try {
                 takePermission(uri)
                 val d = withContext(Dispatchers.IO) { durationOf(app, uri) }
-                apply { it.setMusic(uri.toString(), d) }
+                change { it.setMusic(uri.toString(), d) }
             } catch (ex: Exception) {
                 messages.emit("This audio file cannot be used: ${ex.message}")
             }
@@ -136,7 +136,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
         } catch (_: SecurityException) {}
     }
 
-    fun split() = apply { it.splitAt(positionMs) }
+    fun split() = change { it.splitAt(positionMs) }
 
     /** Start of a segment to delete, marked at the playhead. */
     var segmentStartMs by mutableStateOf<Long?>(null)
@@ -148,7 +148,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
         val start = segmentStartMs ?: return notify("Mark the start of the segment first")
         if (kotlin.math.abs(positionMs - start) < 100) return notify("Move the playhead to the end of the segment")
         if (minOf(start, positionMs) <= 0 && maxOf(start, positionMs) >= timeline.durationMs) return notify("The whole video cannot be deleted")
-        apply { it.deleteRange(start, positionMs) }
+        change { it.deleteRange(start, positionMs) }
         positionMs = minOf(start, positionMs)
         segmentStartMs = null
     }
@@ -157,7 +157,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
         val i = selectedIndex()
         if (i < 0) return notify("Select a clip first")
         if (timeline.clips.size == 1) return notify("The timeline needs at least one clip")
-        apply { it.deleteClip(i) }
+        change { it.deleteClip(i) }
     }
 
     fun moveSelected(delta: Int) {
@@ -165,7 +165,7 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
         if (i < 0) return notify("Select a clip first")
         val to = i + delta
         if (to !in timeline.clips.indices) return
-        apply { it.moveClip(i, to) }
+        change { it.moveClip(i, to) }
     }
 
     fun notify(m: String) { messages.tryEmit(m) }

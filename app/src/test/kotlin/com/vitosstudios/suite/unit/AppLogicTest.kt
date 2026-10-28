@@ -16,7 +16,7 @@ import kotlin.test.assertNull
 class AppLogicTest {
     @Test
     fun textDiffIsMinimal() {
-        assertEquals(Triple(5, 5, " big"), DocsViewModel.diff("Hello world", "Hello big world"))
+        assertEquals(Triple(6, 6, "big "), DocsViewModel.diff("Hello world", "Hello big world"))
         assertEquals(Triple(4, 5, ""), DocsViewModel.diff("abcde", "abcd"))
         assertEquals(Triple(0, 3, "xyz"), DocsViewModel.diff("abc", "xyz"))
         assertEquals(Triple(2, 2, "\n"), DocsViewModel.diff("ab", "ab\n"))

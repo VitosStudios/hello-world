@@ -232,6 +232,8 @@ class XlsxWorkbook private constructor(override val pkg: OpcPackage) : OfficeDoc
 
     private fun definedNamesElement(): XElement? = wbRoot.firstChild("definedNames")
 
+    internal fun definedNameElements(): List<XElement> = definedNamesElement()?.childElements("definedName") ?: emptyList()
+
     /** Defined names as (name, localSheetId, formula text). */
     val definedNames: List<Triple<String, Int?, String>>
         get() = definedNamesElement()?.childElements("definedName")?.mapNotNull { n ->

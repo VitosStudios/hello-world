@@ -789,6 +789,22 @@ class Worksheet internal constructor(
         }
     }
 
+    /**
+     * Why rows and columns of this sheet cannot be inserted or deleted (for example because it
+     * holds charts or tables), or null if they can.
+     */
+    val structureEditBlocker: String? get() = StructureEdits.blocker(this)
+
+    /** Inserts [count] empty rows before row [at]; formulas and ranges everywhere follow. */
+    fun insertRows(at: Int, count: Int = 1) = StructureEdits.insert(this, StructureEdits.Axis.ROWS, at, count).also { indexVersion = -1 }
+
+    /** Deletes rows [at]..[at]+[count]-1; references to deleted cells become #REF!. */
+    fun deleteRows(at: Int, count: Int = 1) = StructureEdits.delete(this, StructureEdits.Axis.ROWS, at, count).also { indexVersion = -1 }
+
+    fun insertColumns(at: Int, count: Int = 1) = StructureEdits.insert(this, StructureEdits.Axis.COLUMNS, at, count).also { indexVersion = -1 }
+
+    fun deleteColumns(at: Int, count: Int = 1) = StructureEdits.delete(this, StructureEdits.Axis.COLUMNS, at, count).also { indexVersion = -1 }
+
     /** Adds a chart of [type] for [dataRange], drawn over [anchor]. */
     fun createChart(type: ChartType, dataRange: CellRange, anchor: CellRange, title: String? = null): ChartInfo {
         requireEditable()

@@ -138,6 +138,21 @@ class VideoViewModel(private val app: SuiteApplication, handle: SavedStateHandle
 
     fun split() = apply { it.splitAt(positionMs) }
 
+    /** Start of a segment to delete, marked at the playhead. */
+    var segmentStartMs by mutableStateOf<Long?>(null)
+
+    fun markSegmentStart() { segmentStartMs = positionMs }
+
+    /** Deletes the timeline range between the mark and the playhead (across clips). */
+    fun deleteSegment() {
+        val start = segmentStartMs ?: return notify("Mark the start of the segment first")
+        if (kotlin.math.abs(positionMs - start) < 100) return notify("Move the playhead to the end of the segment")
+        if (minOf(start, positionMs) <= 0 && maxOf(start, positionMs) >= timeline.durationMs) return notify("The whole video cannot be deleted")
+        apply { it.deleteRange(start, positionMs) }
+        positionMs = minOf(start, positionMs)
+        segmentStartMs = null
+    }
+
     fun deleteSelected() {
         val i = selectedIndex()
         if (i < 0) return notify("Select a clip first")

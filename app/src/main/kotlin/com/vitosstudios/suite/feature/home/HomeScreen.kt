@@ -82,7 +82,7 @@ fun HomeScreen(
     val files by vm.files.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     CollectMessages(vm.messages, snackbar)
-    LaunchedEffect(vm) { vm.openEvents.collect(onOpenFile) }
+    LaunchedEffect(vm) { vm.openEvents.collect { onOpenFile(it) } }
 
     val openAny = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::open) }
     val openImage = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::open) }

@@ -103,8 +103,14 @@ fun PhotoEditorScreen(onBack: () -> Unit, vm: PhotoViewModel = viewModel(factory
     var exportSheet by remember { mutableStateOf(false) }
     var confirmSave by remember { mutableStateOf(false) }
     var options by remember { mutableStateOf(PhotoExportOptions()) }
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/*")) { uri ->
-        if (uri != null) vm.export(options, uri)
+    // One launcher per format so the system file picker proposes the right type.
+    val exportJpeg = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { uri -> if (uri != null) vm.export(options, uri) }
+    val exportPng = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri -> if (uri != null) vm.export(options, uri) }
+    val exportWebp = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/webp")) { uri -> if (uri != null) vm.export(options, uri) }
+    val exportLauncher = when (options.format) {
+        PhotoFormat.JPEG -> exportJpeg
+        PhotoFormat.PNG -> exportPng
+        PhotoFormat.WEBP -> exportWebp
     }
     val commands = buildList {
         add(Command("crop", "Crop", "Photo", Icons.Default.Crop, listOf("aspect", "trim")) { vm.tool = PhotoTool.CROP })

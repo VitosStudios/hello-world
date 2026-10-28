@@ -152,7 +152,9 @@ fun VideoEditorScreen(onBack: () -> Unit, vm: VideoViewModel = viewModel(factory
         Command("add", "Add clip", "Video", Icons.Default.Add, listOf("join", "append")) { addClip.launch(arrayOf("video/mp4")) },
         Command("split", "Split at playhead", "Video", Icons.Default.ContentCut, listOf("cut")) { vm.split() },
         Command("trim", "Trim clip", "Video", Icons.Default.Crop) { sheet = VideoSheet.TRIM },
-        Command("delete", "Delete clip", "Video", Icons.Default.Delete, listOf("remove", "segment")) { vm.deleteSelected() },
+        Command("delete", "Delete clip", "Video", Icons.Default.Delete, listOf("remove")) { vm.deleteSelected() },
+        Command("mark", "Mark segment start", "Video", null, listOf("range", "in point")) { vm.markSegmentStart() },
+        Command("delseg", "Delete segment (mark to playhead)", "Video", Icons.Default.Delete, listOf("cut", "range", "remove")) { vm.deleteSegment() },
         Command("left", "Move clip earlier", "Video", Icons.AutoMirrored.Filled.ArrowBack, listOf("reorder")) { vm.moveSelected(-1) },
         Command("right", "Move clip later", "Video", Icons.AutoMirrored.Filled.ArrowForward, listOf("reorder")) { vm.moveSelected(1) },
         Command("volume", "Clip volume", "Audio", Icons.Default.VolumeUp, listOf("mute", "sound")) { sheet = VideoSheet.VOLUME },
@@ -232,6 +234,10 @@ fun VideoEditorScreen(onBack: () -> Unit, vm: VideoViewModel = viewModel(factory
                 TimelineStrip(vm.timeline, vm.selectedClip, vm.positionMs) { id ->
                     vm.selectedClip = id
                     seek(vm.timeline.clipStartMs(vm.timeline.clipIndex(id)))
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.s), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    TextButton(onClick = { vm.markSegmentStart() }) { Text(vm.segmentStartMs?.let { "Mark: " + formatMs(it) } ?: "Mark start") }
+                    TextButton(onClick = { vm.deleteSegment() }, enabled = vm.segmentStartMs != null) { Text("Delete segment") }
                 }
                 Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.s), horizontalArrangement = Arrangement.SpaceEvenly) {
                     TextButton(onClick = { vm.moveSelected(-1) }, enabled = vm.selectedIndex() > 0) { Text("Move earlier") }

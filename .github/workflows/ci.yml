@@ -10,7 +10,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Runs queue instead of cancelling each other, so a build in progress always reports.
+  cancel-in-progress: false
 
 jobs:
   format-tests:

@@ -60,6 +60,9 @@ class HeaderFooter internal constructor(val doc: DocxDocument, val part: Part, v
 
 data class FindMatch(val paragraph: Paragraph, val start: Int, val end: Int)
 
+/** Where a paragraph sits inside a table. */
+data class CellPosition(val table: DocxTable, val row: Int, val column: Int)
+
 data class ReplaceResult(val replaced: Int, val skippedReadOnly: Int)
 
 data class WordCount(val words: Int, val characters: Int, val charactersNoSpaces: Int, val paragraphs: Int)
@@ -418,6 +421,22 @@ class DocxDocument private constructor(override val pkg: OpcPackage) : OfficeDoc
             DocxTable(this, tbl, after.part)
         }
     }
+
+    /** The innermost table cell containing [p], or null for paragraphs outside tables. */
+    fun cellOf(p: Paragraph): CellPosition? {
+        var e: XElement? = p.element.parent
+        while (e != null && !e.isW("tc")) e = e.parent
+        val tc = e ?: return null
+        val tr = tc.parent ?: return null
+        val tbl = tr.parent ?: return null
+        if (!tr.isW("tr") || !tbl.isW("tbl")) return null
+        val row = tbl.ws("tr").indexOfFirst { it === tr }
+        val col = tr.ws("tc").indexOfFirst { it === tc }
+        return CellPosition(DocxTable(this, tbl, p.part), row, col)
+    }
+
+    /** Deletes a whole table (undoable); a paragraph keeps the story valid. */
+    fun deleteTable(table: DocxTable) = deleteBlock(Block.Table(table))
 
     // ------------------------------------------------------------------------------------
     // Images

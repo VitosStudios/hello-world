@@ -24,8 +24,9 @@ class LambdaChange(private val onUndo: () -> Unit, private val onRedo: () -> Uni
  * a failed edit never leaves a half-applied change in the model.
  */
 class UndoManager {
-    private class Transaction(val id: Long, val label: String) {
+    private class Transaction(val id: Long, val label: String, val coalesceKey: Any? = null) {
         val changes = ArrayList<Change>()
+        var lastTouched: Long = System.currentTimeMillis()
         fun undo() {
             for (i in changes.indices.reversed()) changes[i].undo()
         }
@@ -41,6 +42,9 @@ class UndoManager {
     private var nextId = 1L
     private var savedMarker: Long? = 0L
     private val listeners = LinkedHashSet<() -> Unit>()
+
+    /** Time window for [transaction] coalescing. */
+    var coalesceWindowMs: Long = 1500
 
     /** True while undo/redo replays changes; mutations are not recorded then. */
     var isReplaying: Boolean = false
@@ -66,10 +70,17 @@ class UndoManager {
      * Runs [block] as one undoable step. Nested calls join the outermost transaction.
      * If [block] throws, every change it recorded is reverted before the exception propagates.
      */
-    fun <T> transaction(label: String, block: () -> T): T {
+    fun <T> transaction(label: String, block: () -> T): T = transaction(label, null, block)
+
+    /**
+     * Like [transaction], but consecutive transactions with the same non-null [coalesceKey] that
+     * follow each other within [coalesceWindowMs] form one undo step (for example typing in one
+     * paragraph). A save in between starts a new step.
+     */
+    fun <T> transaction(label: String, coalesceKey: Any?, block: () -> T): T {
         if (isReplaying) return block()
         depth++
-        if (depth == 1) open = Transaction(nextId++, label)
+        if (depth == 1) open = Transaction(nextId++, label, coalesceKey)
         var ok = false
         try {
             val result = block()
@@ -84,7 +95,16 @@ class UndoManager {
                     isReplaying = true
                     try { t.undo() } finally { isReplaying = false }
                 } else if (t.changes.isNotEmpty()) {
-                    undoStack.addLast(t)
+                    val top = undoStack.lastOrNull()
+                    val now = System.currentTimeMillis()
+                    if (t.coalesceKey != null && top != null && top.coalesceKey == t.coalesceKey &&
+                        now - top.lastTouched <= coalesceWindowMs && redoStack.isEmpty() && savedMarker != top.id
+                    ) {
+                        top.changes.addAll(t.changes)
+                        top.lastTouched = now
+                    } else {
+                        undoStack.addLast(t)
+                    }
                     redoStack.clear()
                 }
                 if (t.changes.isNotEmpty()) bump()

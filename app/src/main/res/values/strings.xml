@@ -1,0 +1,4 @@
+<resources>
+    <!-- Working name; see docs/DECISIONS.md (D-013) before publishing. -->
+    <string name="app_name">ArtCraft Mobile</string>
+</resources>

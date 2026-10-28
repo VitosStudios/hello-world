@@ -339,6 +339,24 @@ class XlsxEditTest {
     }
 
     @Test
+    fun workbookWithoutStylesGetsOneWhenFormatted() {
+        val target = File(out, "no-styles.xlsx")
+        XlsxWorkbook.createNew().use { wb ->
+            val main = wb.pkg.mainDocument()!!
+            val rels = wb.pkg.relationships(main)
+            val rel = rels.firstOfType(com.vitosstudios.suite.opc.RelTypes.STYLES)!!
+            rels.remove(rel.id)
+            wb.pkg.removePart(rels.resolve(rel))
+            wb.sheet(0).setCellInput("A1", "plain")
+            wb.sheet(0).setCellInput("A2", "12%")
+            wb.save(target)
+        }
+        XlsxWorkbook.open(target).use { wb -> assertEquals("12%", wb.sheet(0).cell("A2")!!.display) }
+        SecondReader.assume()
+        assertEquals("12%", csvLines(target)[1])
+    }
+
+    @Test
     fun sharedFormulaMasterCanBeEdited() {
         val src = Corpus.file("xlsx/excel-poi-shared_formulas.xlsx")
         val f = edit(src, "shared-master") { wb ->

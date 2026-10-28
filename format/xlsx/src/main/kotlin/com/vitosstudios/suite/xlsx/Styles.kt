@@ -94,28 +94,34 @@ internal class Styles(private val pkg: OpcPackage, private val workbookPart: Par
 
     private fun root(): XElement? = part?.xmlOrNull()?.root
 
+    private var xfList: List<XElement> = emptyList()
+    private val dateCache = HashMap<Int, Boolean>()
+
     private fun refresh() {
         val p = part
         val doc = p?.xmlOrNull()
         val v = doc?.modCount ?: -2
         if (p === cachePart && v == cacheVersion) return
         styleCache.clear()
+        dateCache.clear()
         customFormats = doc?.root?.firstChild("numFmts")?.childElements("numFmt")?.mapNotNull { e ->
             val id = e.a("numFmtId")?.toIntOrNull() ?: return@mapNotNull null
             id to (e.a("formatCode") ?: "General")
         }?.toMap() ?: emptyMap()
+        xfList = doc?.root?.firstChild("cellXfs")?.childElements("xf") ?: emptyList()
         cachePart = p
         cacheVersion = v
     }
 
-    val isEditable: Boolean get() = part?.xmlOrNull() != null
+    /** Missing style sheets are created on the first formatting edit; unreadable ones block edits. */
+    val isEditable: Boolean get() = part.let { it == null || it.xmlOrNull() != null }
 
     fun formatCode(numFmtId: Int): String {
         refresh()
         return customFormats[numFmtId] ?: BuiltinFormats.code(numFmtId) ?: "General"
     }
 
-    private fun xfs(): List<XElement> = root()?.firstChild("cellXfs")?.childElements("xf") ?: emptyList()
+    private fun xfs(): List<XElement> { refresh(); return xfList }
 
     fun xfCount(): Int = xfs().size
 
@@ -124,9 +130,22 @@ internal class Styles(private val pkg: OpcPackage, private val workbookPart: Par
     fun numFmtCodeOf(xfIndex: Int): String = formatCode(numFmtIdOf(xfIndex))
 
     fun isDateStyle(xfIndex: Int): Boolean {
-        val id = numFmtIdOf(xfIndex)
-        if (BuiltinFormats.isDateId(id)) return true
-        return NumberFormat.isDateFormat(formatCode(id))
+        refresh()
+        return dateCache.getOrPut(xfIndex) {
+            val id = numFmtIdOf(xfIndex)
+            BuiltinFormats.isDateId(id) || NumberFormat.isDateFormat(formatCode(id))
+        }
+    }
+
+    /** The style sheet root, adding a minimal style sheet to workbooks that have none. */
+    private fun editableRoot(): XElement {
+        root()?.let { return it }
+        if (part != null) throw XlsxEditException("The style sheet cannot be edited")
+        val dir = workbookPart.name.substringBeforeLast('/')
+        val name = if (pkg.part("$dir/styles.xml") == null) "$dir/styles.xml" else pkg.uniquePartName("$dir/styles", "xml")
+        pkg.addXmlPart(name, com.vitosstudios.suite.opc.ContentTypeNames.SML_STYLES, minimalDocument())
+        pkg.relationships(workbookPart).addTo(RelTypes.STYLES, name)
+        return root()!!
     }
 
     fun style(xfIndex: Int): CellStyle {
@@ -224,7 +243,7 @@ internal class Styles(private val pkg: OpcPackage, private val workbookPart: Par
     /** Index of a cell format equal to [xfIndex] with [patch] applied, appending records as needed. */
     fun patched(xfIndex: Int, patch: StylePatch): Int {
         xfMemo[xfIndex to patch]?.let { return it }
-        val r = root() ?: throw XlsxEditException("The style sheet cannot be edited")
+        val r = editableRoot()
         val cellXfs = r.firstChild("cellXfs") ?: throw XlsxEditException("The style sheet has no cell formats")
         val base = xfs().getOrNull(xfIndex) ?: xfs().firstOrNull() ?: throw XlsxEditException("The style sheet has no cell formats")
         val xf = base.deepCopy()

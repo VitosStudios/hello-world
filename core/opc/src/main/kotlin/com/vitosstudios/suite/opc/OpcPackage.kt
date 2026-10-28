@@ -339,6 +339,29 @@ class OpcPackage private constructor(
     fun toBytes(): ByteArray = ByteArrayOutputStream().also { writeTo(it) }.toByteArray()
 
     /**
+     * Captures the current content for writing on another thread. Modified and new parts are
+     * serialised now (on the thread that edits the package); unmodified parts are streamed from
+     * the source archive when the snapshot is written. The snapshot never rebases this package,
+     * so the editing thread keeps reading from its own source.
+     */
+    fun snapshot(): PackageSnapshot {
+        val entries = order.map { part ->
+            val info = part.zipInfo
+            val inMemory = if (part.isDirectory) ByteArray(0) else if (part.isModified || info == null) part.bytes() else null
+            PackageSnapshot.Entry(
+                zipName = info?.entryName ?: PartNames.toZipEntry(part.name),
+                method = info?.method ?: if (part.isDirectory) ZipEntry.STORED else ZipEntry.DEFLATED,
+                time = info?.time ?: FIXED_TIME,
+                comment = info?.comment,
+                bytes = inMemory,
+                changed = inMemory != null && !part.isDirectory,
+                name = part.name,
+            )
+        }
+        return PackageSnapshot(entries, source, zipComment, undo.stateMarker)
+    }
+
+    /**
      * Saves to [target] crash-safely: the package is written to a temporary file, verified
      * ([PackageVerifier] plus the format's own [verify]), then atomically moved over [target].
      * After saving over the source file the package keeps reading from the new file.
@@ -370,7 +393,7 @@ class OpcPackage private constructor(
 
     companion object {
         /** DOS timestamp used for new entries (1980-01-01), so output does not depend on the clock. */
-        private const val FIXED_TIME = 315532800000L + 12 * 3600 * 1000L
+        internal const val FIXED_TIME = 315532800000L + 12 * 3600 * 1000L
 
         /** Upper bounds that protect against ZIP bombs. */
         var maxEntries = 20_000

@@ -128,6 +128,15 @@ class UndoManager {
     /** Remembers the current state as the saved one (see [isDirty]). */
     fun markSaved() { savedMarker = currentMarker() }
 
+    /** Identifies the current state; pass it to [markSaved] when a background save of it completes. */
+    val stateMarker: Long get() = currentMarker()
+
+    /** Marks the state identified by [marker] as saved (it may be older than the current state). */
+    fun markSaved(marker: Long) {
+        savedMarker = marker
+        bump()
+    }
+
     fun clear() {
         undoStack.clear()
         redoStack.clear()

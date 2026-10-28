@@ -148,3 +148,32 @@ class PackageModelTest {
         assertFailsWith<OpcException> { OpcPackage.open(f) }
     }
 }
+
+class PackageSnapshotTest {
+    @Test
+    fun snapshotSavedOnAnotherThreadMatchesDirectSave() {
+        val docx = Corpus.file("docx/word-poi-sample.docx")
+        val out = Corpus.tempDir("opc-snapshot")
+        val work = File(out, "work.docx")
+        docx.copyTo(work, overwrite = true)
+        OpcPackage.open(work).use { pkg ->
+            val body = pkg.mainDocument()!!.xml().root.elements().first()
+            body.appendChild(XElement("w:p"))
+            val snap = pkg.snapshot()
+            // Edits after the snapshot are not part of it.
+            body.appendChild(XElement("w:p"))
+            val t = Thread { snap.save(work) }
+            t.start(); t.join()
+            assertTrue(pkg.undo.isDirty)
+            pkg.undo.markSaved(snap.undoMarker)
+            assertTrue(pkg.undo.isDirty, "the second edit is still unsaved")
+            // The package keeps working after its source file was replaced.
+            pkg.save(File(out, "direct.docx"))
+        }
+        OpcPackage.open(work).use { pkg ->
+            val body = pkg.mainDocument()!!.xml().root.elements().first()
+            assertEquals(1, body.children.count { it is XElement && it.qName == "w:p" && (it as XElement).children.isEmpty() })
+        }
+        PackageCompare.assertOnlyChanged(docx, work, setOf("word/document.xml"))
+    }
+}

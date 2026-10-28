@@ -11,3 +11,4 @@ captures/
 *.jks
 /out/
 kotlin-js-store/
+.claude/

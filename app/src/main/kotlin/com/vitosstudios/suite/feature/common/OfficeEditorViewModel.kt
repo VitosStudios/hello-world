@@ -72,6 +72,24 @@ abstract class OfficeEditorViewModel<D : OfficeDocument>(
     /** Called once after the document is open (on the main thread). */
     protected open fun onOpened(doc: D) {}
 
+    /** Content captured on the main thread and written on a background thread. */
+    interface SaveSnapshot {
+        val undoMarker: Long
+        fun write(target: File)
+    }
+
+    /**
+     * Captures what to save. The default writes the OPC package (unchanged parts copied
+     * byte-identical) and verifies it with [verifyWritten]. CSV files override this.
+     */
+    protected open fun snapshotForSave(doc: D): SaveSnapshot {
+        val snap = doc.pkg.snapshot()
+        return object : SaveSnapshot {
+            override val undoMarker: Long = snap.undoMarker
+            override fun write(target: File) = snap.save(target) { verifyWritten(it) }
+        }
+    }
+
     private suspend fun load() {
         val e = container.files.get(fileId)
         if (e == null) {
@@ -146,10 +164,10 @@ abstract class OfficeEditorViewModel<D : OfficeDocument>(
         saveState = SaveState.SAVING
         try {
             if (dirty) {
-                val snapshot = d.pkg.snapshot()
+                val snapshot = snapshotForSave(d)
                 val err = withContext(Dispatchers.IO) {
                     try {
-                        snapshot.save(File(e.workingPath)) { verifyWritten(it) }
+                        snapshot.write(File(e.workingPath))
                         container.files.markPending(fileId)
                         null
                     } catch (ex: Exception) {
@@ -188,10 +206,10 @@ abstract class OfficeEditorViewModel<D : OfficeDocument>(
         val e = entry
         if (e != null && d.pkg.undo.isDirty) {
             // Last chance: write the pending edits from the app scope, then close the package.
-            val snapshot = d.pkg.snapshot()
+            val snapshot = snapshotForSave(d)
             container.appScope.launch(Dispatchers.IO) {
                 try {
-                    snapshot.save(File(e.workingPath)) { verifyWritten(it) }
+                    snapshot.write(File(e.workingPath))
                     container.files.markPending(fileId)
                     container.files.writeBack(fileId)
                 } catch (_: Exception) {

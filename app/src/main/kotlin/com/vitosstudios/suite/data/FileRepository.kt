@@ -46,6 +46,15 @@ class FileRepository(private val context: Context, private val dao: FileDao) {
         val existing = dao.byUri(uri.toString())
         val id = existing?.id ?: UUID.randomUUID().toString()
         val dir = File(workRoot, id).apply { mkdirs() }
+        if (kind == FileKind.MP4) {
+            // Videos are never copied or overwritten: the editor keeps a project file and reads
+            // the clips from their original location; results are exported as new files.
+            val project = File(dir, "project.timeline")
+            val entry = FileEntry(id, uri.toString(), name, kind, size ?: 0L, System.currentTimeMillis(), project.absolutePath, null,
+                pinned = existing?.pinned ?: false)
+            dao.upsert(entry)
+            return@withContext entry
+        }
         val working = File(dir, "working.${kind.primaryExtension}")
         val backup = File(dir, "original.${kind.primaryExtension}")
         if (existing == null || !existing.pendingWriteBack || !working.isFile) {

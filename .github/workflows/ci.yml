@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      # LibreOffice is the second reader of the edit tests; CI must not skip it.
+      SUITE_SECOND_READER: required
+      HAS_SIGNING: ${{ secrets.SUITE_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install LibreOffice (second reader for edit tests)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libreoffice-writer libreoffice-calc libreoffice-impress
+          soffice --version
+
+      - name: Round-trip, edit and unit tests (format layers)
+        run: >
+          ./gradlew --stacktrace
+          :core:common:test :core:xml:test :core:opc:test
+          :format:docx:test :format:xlsx:test :format:pptx:test
+          :format:photo:test :format:video:test
+
+      - name: App unit tests
+        run: ./gradlew --stacktrace :app:testDebugUnitTest
+
+      - name: Screenshot tests (record)
+        run: ./gradlew --stacktrace :app:recordRoborazziDebug
+
+      - name: Build debug APK
+        run: ./gradlew --stacktrace :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: app/build/outputs/roborazzi
+          if-no-files-found: ignore
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          if-no-files-found: ignore
+
+      - name: Build signed release APK
+        if: env.HAS_SIGNING == 'true'
+        env:
+          SUITE_KEYSTORE_BASE64: ${{ secrets.SUITE_KEYSTORE_BASE64 }}
+          SUITE_KEYSTORE_PASSWORD: ${{ secrets.SUITE_KEYSTORE_PASSWORD }}
+          SUITE_KEY_ALIAS: ${{ secrets.SUITE_KEY_ALIAS }}
+          SUITE_KEY_PASSWORD: ${{ secrets.SUITE_KEY_PASSWORD }}
+        run: |
+          echo "$SUITE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          SUITE_KEYSTORE_FILE="$RUNNER_TEMP/release.jks" ./gradlew --stacktrace :app:assembleRelease
+
+      - name: Upload signed release APK
+        if: env.HAS_SIGNING == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/*.apk

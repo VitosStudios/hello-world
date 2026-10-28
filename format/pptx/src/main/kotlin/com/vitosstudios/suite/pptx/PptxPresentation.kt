@@ -86,6 +86,32 @@ class PptxPresentation private constructor(override val pkg: OpcPackage) : Offic
 
     fun slideViews(): List<SlideView> = slideParts().indices.map(::slideView)
 
+    /**
+     * The topmost editable shape of slide [slide] containing the point (EMU), descending into
+     * groups so grouped text can be edited; null if none.
+     */
+    fun hitTest(slide: Int, x: Long, y: Long): ShapeView? {
+        fun contains(s: ShapeView) = x >= s.bounds.x && x <= s.bounds.right && y >= s.bounds.y && y <= s.bounds.bottom
+        fun find(list: List<ShapeView>): ShapeView? {
+            for (s in list.asReversed()) {
+                if (s.source != ShapeSource.SLIDE || s.hidden) continue
+                if (s.kind == ShapeKind.GROUP) {
+                    find(s.children)?.let { return it }
+                    if (contains(s)) return s
+                } else if (contains(s)) return s
+            }
+            return null
+        }
+        return find(slideView(slide).shapes)
+    }
+
+    /** True if the shape (or a shape inside it) is the target of an animation; such shapes cannot be deleted. */
+    fun isShapeAnimated(slide: Int, shapeId: Int): Boolean {
+        val shape = shapeElement(slide, shapeId)
+        val ids = (sequenceOf(shape) + shape.descendants()).mapNotNull { shapeId(it) }.toSet()
+        return slideRoot(slide).element(P, "timing")?.descendants()?.any { it.attr("spid")?.toIntOrNull() in ids } == true
+    }
+
     /** Bytes of a media part referenced by a view (images, backgrounds). */
     fun partBytes(partName: String): ByteArray? = pkg.part(partName)?.bytes()
 

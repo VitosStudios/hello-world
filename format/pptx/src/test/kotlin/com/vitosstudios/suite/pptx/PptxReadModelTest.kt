@@ -102,6 +102,23 @@ class PptxReadModelTest {
     }
 
     @Test
+    fun hitTestFindsTopmostSlideShape() {
+        open("powerpoint-poi-SampleShow.pptx").use { pres ->
+            val hit = pres.hitTest(0, 685800 + 1000, 2130425 + 1000)
+            assertEquals("The Title", hit?.name)
+            assertEquals(null, pres.hitTest(0, 1, 1))
+        }
+        open("powerpoint-poi-shapes.pptx").use { pres ->
+            val index = pres.slideViews().indexOfFirst { v -> v.slideShapes.any { it.kind == ShapeKind.GROUP } }
+            val group = pres.slideView(index).slideShapes.first { it.kind == ShapeKind.GROUP }
+            val child = group.children.first()
+            val hit = pres.hitTest(index, child.bounds.x + child.bounds.cx / 2, child.bounds.y + child.bounds.cy / 2)
+            assertNotNull(hit)
+            assertTrue(hit.kind != ShapeKind.GROUP || group.children.isEmpty())
+        }
+    }
+
+    @Test
     fun colorModifiers() {
         val e = XmlParser.parse("""<a:srgbClr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" val="4F81BD"><a:lumMod val="50000"/></a:srgbClr>""").root
         val c = Colors.applyModifiers(Colors.baseColor(e)!!, e)

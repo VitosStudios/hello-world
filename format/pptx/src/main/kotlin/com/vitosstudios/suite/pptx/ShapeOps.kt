@@ -164,10 +164,7 @@ internal class ShapeOps(private val pres: PptxPresentation) {
     fun delete(slide: Int, shapeId: Int) {
         val root = pres.slideRoot(slide)
         val shape = pres.shapeElement(slide, shapeId)
-        val ids = (listOf(shape) + shape.descendants().toList())
-            .mapNotNull { PptxPresentation.shapeId(it) }.toSet()
-        val animated = root.element(P, "timing")?.descendants()?.any { e -> e.attr("spid")?.toIntOrNull() in ids } == true
-        if (animated) throw PptxEditException("This shape is animated. Remove its animation in a desktop editor before deleting it.")
+        if (pres.isShapeAnimated(slide, shapeId)) throw PptxEditException("This shape is animated. Remove its animation in a desktop editor before deleting it.")
         val used = relationshipIds(shape)
         shape.detach()
         val stillUsed = relationshipIds(root)

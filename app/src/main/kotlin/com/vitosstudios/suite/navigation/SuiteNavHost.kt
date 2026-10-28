@@ -27,7 +27,6 @@ import com.vitosstudios.suite.feature.home.HomeScreen
 import com.vitosstudios.suite.feature.pdf.PdfViewerScreen
 import com.vitosstudios.suite.feature.photo.PhotoEditorScreen
 import com.vitosstudios.suite.feature.sheets.SheetsEditorScreen
-import com.vitosstudios.suite.feature.slides.PresentationScreen
 import com.vitosstudios.suite.feature.slides.SlidesEditorScreen
 import com.vitosstudios.suite.feature.video.VideoEditorScreen
 import com.vitosstudios.suite.ui.components.EmptyState
@@ -38,12 +37,10 @@ object Routes {
     const val HOME = "home"
     const val EDITOR = "editor/{id}"
     const val COMPAT = "compat/{id}"
-    const val PRESENT = "present/{id}?start={start}"
     const val ABOUT = "about"
 
     fun editor(id: String) = "editor/$id"
     fun compat(id: String) = "compat/$id"
-    fun present(id: String, start: Int = 0) = "present/$id?start=$start"
 }
 
 /** Single-activity navigation: home, one editor route that dispatches by file type, and helpers. */
@@ -78,27 +75,17 @@ fun SuiteNavHost() {
                 id = id,
                 onBack = { nav.popBackStack() },
                 onCompatibility = { nav.navigate(Routes.compat(id)) },
-                onPresent = { start -> nav.navigate(Routes.present(id, start)) },
             )
         }
         composable(Routes.COMPAT, arguments = listOf(navArgument("id") { type = NavType.StringType })) {
             CompatibilityScreen(onBack = { nav.popBackStack() })
-        }
-        composable(
-            Routes.PRESENT,
-            arguments = listOf(
-                navArgument("id") { type = NavType.StringType },
-                navArgument("start") { type = NavType.IntType; defaultValue = 0 },
-            ),
-        ) {
-            PresentationScreen(onExit = { nav.popBackStack() })
         }
         composable(Routes.ABOUT) { AboutScreen(onBack = { nav.popBackStack() }) }
     }
 }
 
 @Composable
-private fun EditorRoute(id: String, onBack: () -> Unit, onCompatibility: () -> Unit, onPresent: (Int) -> Unit) {
+private fun EditorRoute(id: String, onBack: () -> Unit, onCompatibility: () -> Unit) {
     val container = LocalContext.current.appContainer
     var entry by remember(id) { mutableStateOf<FileEntry?>(null) }
     var missing by remember(id) { mutableStateOf(false) }
@@ -113,7 +100,7 @@ private fun EditorRoute(id: String, onBack: () -> Unit, onCompatibility: () -> U
         else -> when (e.kind.editor) {
             FileKind.Editor.DOCUMENTS -> DocsEditorScreen(onBack = onBack, onCompatibility = onCompatibility)
             FileKind.Editor.SHEETS -> SheetsEditorScreen(onBack = onBack, onCompatibility = onCompatibility)
-            FileKind.Editor.SLIDES -> SlidesEditorScreen(onBack = onBack, onCompatibility = onCompatibility, onPresent = onPresent)
+            FileKind.Editor.SLIDES -> SlidesEditorScreen(onBack = onBack, onCompatibility = onCompatibility)
             FileKind.Editor.PHOTO -> PhotoEditorScreen(onBack = onBack)
             FileKind.Editor.VIDEO -> VideoEditorScreen(onBack = onBack)
             FileKind.Editor.PDF -> PdfViewerScreen(onBack = onBack)

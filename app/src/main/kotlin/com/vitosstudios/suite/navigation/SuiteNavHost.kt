@@ -35,6 +35,8 @@ import com.vitosstudios.suite.ui.components.EmptyState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object Routes {
     const val HOME = "home"
@@ -56,14 +58,22 @@ fun SuiteNavHost() {
     LaunchedEffect(Unit) {
         container.incomingUris.collect { uri ->
             container.incomingUris.resetReplayCache()
-            try {
-                val e = container.files.open(uri)
-                nav.navigate(Routes.editor(e.id))
+            val result = try {
+                Result.success(container.files.open(uri))
             } catch (ex: CancellationException) {
                 throw ex
             } catch (ex: Exception) {
                 Log.w("SuiteNavHost", "Cannot open $uri", ex)
-                Toast.makeText(context, "Can't open this file: ${ex.message ?: ex.javaClass.simpleName}", Toast.LENGTH_LONG).show()
+                Result.failure(ex)
+            }
+            // Navigation and toasts must run on the main thread.
+            withContext(Dispatchers.Main.immediate) {
+                result.fold(
+                    onSuccess = { nav.navigate(Routes.editor(it.id)) },
+                    onFailure = {
+                        Toast.makeText(context, "Can't open this file: ${it.message ?: it.javaClass.simpleName}", Toast.LENGTH_LONG).show()
+                    },
+                )
             }
         }
     }
